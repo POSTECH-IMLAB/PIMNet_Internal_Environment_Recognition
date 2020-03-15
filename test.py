@@ -94,5 +94,5 @@ for iteration, batch in enumerate(test_data_loader):
                 './test_result/Prior_Estimation/%4d.jpg' % (img_num))
         scipy.misc.toimage(final_output_0 * 255, high=255, low=0, cmin=0, cmax=255).save(
                 './test_result/Final_SR_reconstruction/%4d.jpg' % (img_num))
-        #code minor change7
+        #code minor change8
 
