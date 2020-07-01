@@ -28,4 +28,4 @@ Train은 파이썬 환경에서 train_main.py를 불러오는 것으로 간단�
 #해당 코드 참조
 >> upscaled,boundaries,reconstructed = fsrnet(input)
 
-commit test10
+commit final test jul1
