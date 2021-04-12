@@ -3,7 +3,7 @@ import torch
 
 configurations = {
     1: dict(
-        SEED = 1337, # random seed for reproduce results
+        SEED = 1993, # random seed for reproduce results
 
         DATA_ROOT = '../DATA', # the parent root where your train/val/test data are stored
         MODEL_ROOT = '../CHECKPOINT', # the root to buffer your checkpoints
