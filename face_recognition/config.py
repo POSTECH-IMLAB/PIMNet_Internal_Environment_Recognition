@@ -19,7 +19,7 @@ configurations = {
         RGB_MEAN = [0.5, 0.5, 0.5], # for normalize inputs to [-1, 1]
         RGB_STD = [0.5, 0.5, 0.5],
         EMBEDDING_SIZE = 512, # feature dimension
-        BATCH_SIZE = 256*1,
+        BATCH_SIZE = 256*4,
         DROP_LAST = True, # whether drop the last batch to ensure consistent batch_norm statistics
         LR = 0.1, # initial LR
         NUM_EPOCH = 125, # total epoch number (use the firt 1/25 epochs to warm up)
@@ -29,8 +29,8 @@ configurations = {
 
         DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
         MULTI_GPU = True, # flag to use multiple GPUs; if you choose to train with single GPU, you should first run "export CUDA_VISILE_DEVICES=device_id" to specify the GPU card you want to use
-        # GPU_ID = [0, 1, 2, 3], # specify your GPU ids
-        GPU_ID = [0], # specify your GPU ids
+         GPU_ID = [0, 1, 2, 3], # specify your GPU ids
+        #GPU_ID = [0], # specify your GPU ids
         PIN_MEMORY = True,
         NUM_WORKERS = 0,
 ),
