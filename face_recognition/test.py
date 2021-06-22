@@ -122,8 +122,6 @@ if __name__ == '__main__':
     reference = get_reference_facial_points(default_square = True) * scale
     for i, (data_path,img_path, txt_path) in enumerate(iter(dataset_gallery)):
         print('Processing %d/%d'%(i+1,len(dataset_gallery)))
-        if img_path.rpartition('/')[-1].split('.')[0] in ['J-hope','Jimin','Jin','Jungkook','RM','Suga','V']:
-            continue
         img = Image.open(img_path)
         img_raw = cv2.imread(img_path, cv2.IMREAD_COLOR)
         f=open(txt_path,'r')
