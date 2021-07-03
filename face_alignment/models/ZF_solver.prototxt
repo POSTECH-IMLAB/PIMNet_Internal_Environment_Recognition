@@ -1,0 +1,15 @@
+net: "models/ZF_train.prototxt"
+base_lr: 0.001
+lr_policy: "step"
+gamma: 0.1
+stepsize: 70000
+display: 20
+max_iter: 200000
+momentum: 0.9
+weight_decay: 0.0005
+## We disable standard caffe solver snapshotting and implement our own snapshot
+#snapshot: 0
+snapshot: 10000
+snapshot_prefix: "E:/FA/FA_CNN_HS20/caffemodels/FA_ZF_baseline"
+#debug_info: true
+
