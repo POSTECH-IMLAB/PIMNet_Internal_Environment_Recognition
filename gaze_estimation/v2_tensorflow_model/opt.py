@@ -26,9 +26,9 @@ def load_images(train_ratio=0.95, test_ratio=0.05):
     #응시영역 레이블별로 읽도록 한다.
     data_list_1 = glob('*part_1.jpg') #1
     data_list_2 = glob('*part_3.jpg') #2
-    data_list_3 = glob('F:/DB/MOBIS/CROPPED_2/*part_6.jpg')  #3
-    data_list_4 = glob('F:/DB/MOBIS/CROPPED_2/*part_8.jpg')  #4
-    data_list_5 = glob('F:/DB/MOBIS/CROPPED_2/*part_10.jpg')  #5
+    data_list_3 = glob('*part_6.jpg')  #3
+    data_list_4 = glob('*part_8.jpg')  #4
+    data_list_5 = glob('*part_10.jpg')  #5
     data_list_6 = glob('F:/DB/MOBIS/CROPPED_2/*part_12.jpg')  #6
 
 
