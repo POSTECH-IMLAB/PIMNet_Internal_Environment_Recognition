@@ -29,7 +29,7 @@ def load_images(train_ratio=0.95, test_ratio=0.05):
     data_list_3 = glob('*part_6.jpg')  #3
     data_list_4 = glob('*part_8.jpg')  #4
     data_list_5 = glob('*part_10.jpg')  #5
-    data_list_6 = glob('F:/DB/MOBIS/CROPPED_2/*part_12.jpg')  #6
+    data_list_6 = glob('*part_12.jpg')  #6
 
 
     batch_tuple = [] #튜플
