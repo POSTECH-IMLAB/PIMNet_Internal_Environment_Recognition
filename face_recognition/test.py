@@ -60,8 +60,6 @@ if __name__ == '__main__':
     PIN_MEMORY = cfg['PIN_MEMORY']
     NUM_WORKERS = cfg['NUM_WORKERS']
 
-    writer = SummaryWriter(LOG_ROOT) # writer for buffering intermedium results
-
     trans = transforms.Compose([
         transforms.Resize([INPUT_SIZE[0], INPUT_SIZE[1]]),
         transforms.ToTensor(),
