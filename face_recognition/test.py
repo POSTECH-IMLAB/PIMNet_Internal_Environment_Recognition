@@ -213,8 +213,3 @@ if __name__ == '__main__':
             cv2.rectangle(img_raw, c1, c2, color_dict[int(b[-1])], -1, cv2.LINE_AA)  # filled
             #cv2.putText(img_raw, Gallery_ID[int(b[-1])] + ' ' + str(b[-2]), (c1[0], c1[1] - 2), 0, 2/3, [225, 255, 255])
             cv2.putText(img_raw, Gallery_ID[int(b[-1])], (c1[0], c1[1] - 2), 0, 2/3, [225, 255, 255])
-            
-
-        if not os.path.isdir(data_path+'_video'):
-                os.mkdir(data_path+'_video')
-        cv2.imwrite(os.path.join(data_path+'_video',img_path.rpartition('/')[-1]), img_raw)
