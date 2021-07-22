@@ -9,7 +9,6 @@ configurations = {
         MODEL_ROOT = '../CHECKPOINT', # the root to buffer your checkpoints
         LOG_ROOT = '../LOG', # the root to log your train/val status
         BACKBONE_RESUME_ROOT = '../CHECKPOINT/Backbone_IR_152_Epoch_112.pth', # the root to resume training from a saved checkpoint
-        #HEAD_RESUME_ROOT = './', # the root to resume training from a saved checkpoint
         HEAD_RESUME_ROOT = '../CHECKPOINT/Head_ArcFace_Epoch_112.pth', # the root to resume training from a saved checkpoint
 
         BACKBONE_NAME = 'IR_152', # support: ['ResNet_50', 'ResNet_101', 'ResNet_152', 'IR_50', 'IR_101', 'IR_152', 'IR_SE_50', 'IR_SE_101', 'IR_SE_152']
