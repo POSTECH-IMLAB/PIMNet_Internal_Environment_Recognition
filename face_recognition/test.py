@@ -145,7 +145,6 @@ if __name__ == '__main__':
                 Gallery_feature=torch.cat([Gallery_feature, torch.div(features,torch.norm(features,2,1,True))],dim=0)
 
     print('Gallery_ID:',Gallery_ID)
-    # Gallery_ID: ['Timothy Burke', 'Ross Geller', 'Joey Tribbiani', 'Monica Geller', 'Phoebe Buffay', 'Chandler Bing', 'Rachel Green']
     for i, (data_path,img_path, txt_path) in enumerate(iter(dataset_prove)):
         print('Processing %d/%d'%(i+1,len(dataset_prove)))
         if int(img_path.rpartition('/')[-1].split('.')[0].rpartition('_')[2]) < 660:
