@@ -61,7 +61,7 @@ def load_images(train_ratio=0.95, test_ratio=0.05):
         #불러온 이미지 batch에 저장
         batch_tuple.append((path, 2))
 
-    # 4
+    # ---------------- 4
     for i in range(len(data_list_4)):
         path = data_list_4[i]
         img = read_image(path)
@@ -69,7 +69,7 @@ def load_images(train_ratio=0.95, test_ratio=0.05):
         #불러온 이미지 batch에 저장
         batch_tuple.append((path, 3))
 
-    # 5
+    # ---------------- 5
     for i in range(len(data_list_5)):
         path = data_list_5[i]
         img = read_image(path)
@@ -77,7 +77,7 @@ def load_images(train_ratio=0.95, test_ratio=0.05):
         #불러온 이미지 batch에 저장
         batch_tuple.append((path, 4))
 
-    # 6
+    # ----------------- 6
     for i in range(len(data_list_6)):
         path = data_list_6[i]
         img = read_image(path)
