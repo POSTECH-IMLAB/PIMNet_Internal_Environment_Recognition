@@ -33,10 +33,10 @@ def load_images(train_ratio=0.95, test_ratio=0.05):
     data_list_6 = glob('*part_12.jpg')  #6
 
 
-    batch_tuple = [] #튜플
+    batch_tuple = []
 
     n = 0
-    #1
+    #------------1
     for i in range(len(data_list_1)):
         path = data_list_1[i]
         img = read_image(path)
@@ -45,7 +45,7 @@ def load_images(train_ratio=0.95, test_ratio=0.05):
         batch_tuple.append((path, 0))
 
 
-    # 2
+    #-------------- 2
     for i in range(len(data_list_2)):
         path = data_list_2[i]
         img = read_image(path)
@@ -53,7 +53,7 @@ def load_images(train_ratio=0.95, test_ratio=0.05):
         #불러온 이미지 batch에 저장
         batch_tuple.append((path, 1))
 
-    # 3
+    #--------------- 3
     for i in range(len(data_list_3)):
         path = data_list_3[i]
         img = read_image(path)
