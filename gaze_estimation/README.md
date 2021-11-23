@@ -1,4 +1,11 @@
 # IR_Driver_Gaze_Estimation
+
+In this repository, light version of gaze estimation is uploaded
+(caffe, tensorflow and pytorch)
+
+input : 120 x 100 grayscale face image
+
+
 <CAFFE>
 Based on IR camera, implmented with Caffe
 
@@ -11,6 +18,8 @@ bin\caffe train --solver=ir_gaze_solver.prototxt --weights=caffemodels/***.caffe
 For the test, the ir_gaze_solver.deploy can be utilized.
 
 
+
+
 <TF>
 -TRAINING/EVALUATION from Scratch-
 python train.py 
@@ -19,3 +28,7 @@ python train.py
 python test_sequences.py
 
 
+
+<PyTorch>
+-TRAINING-
+python train.py
