@@ -5,7 +5,7 @@ import torch.optim as optim
 
 import os
 import time
-from gaze_model_light_ver import Estimator
+
 from ir_data import IR_FACE_Dataset
 from config import Config
 import numpy as np
@@ -14,7 +14,10 @@ from torch.utils.data import Dataset, DataLoader
 
 from utils import AverageMeter
 # ----------------------------------
-
+if Config.use_model_type == 'LIGHT':
+    from gaze_model_light_ver import Estimator
+elif Config.use_model_type == 'HEAVY' or Config.use_model_type == 'HEAVY+ATT':
+    from gaze_model_heavy_ver import Estimator
 
 # ----------------------------------
 
@@ -37,7 +40,10 @@ def train():
         os.makedirs(Config.save_path)
 
     # model
-    model = Estimator(use_mtcnn=False).cuda()
+    if Config.use_model_type == 'HEAVY+ATT':
+        model = Estimator(use_attention_map=True).cuda()
+    else:
+        model = Estimator().cuda()
     model = model.to(device)
 
     # opt
@@ -104,8 +110,9 @@ def train():
 
 
         # save model
-        torch.save({'state_dict' : model.state_dict(), 'opt' : optimizer.state_dict()}, \
-            Config.save_path + "/check_" + str(epoch_i) + ".pth")
+        if epoch_i % Config.save_epoch == 0:
+            torch.save({'state_dict' : model.state_dict(), 'opt' : optimizer.state_dict()}, \
+                Config.save_path + "/check_" + str(epoch_i) + ".pth")
         
 
     

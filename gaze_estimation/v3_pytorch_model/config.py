@@ -1,7 +1,11 @@
 class Config(object):
     lr = 0.001
+
+    # 'LIGHT' or 'HEAVY' or 'HEAVY+ATT'
+    use_model_type = 'HEAVY+ATT'
+
     alpha = 2
-    batch_size = 400
+    batch_size = 200
     global_img_size = [100, 120]
     local_img_size = [100, 80]
     schedule = [150, 225]
@@ -10,7 +14,7 @@ class Config(object):
     save_epoch = 10
 
     data_path = 'D:/MOBIS/cropped_fld_and_face'
-    save_path = 'save_checks'
+    save_path = 'save_checks_heavy_att'
 
     max_epoch = 200
     gpus = "0"
