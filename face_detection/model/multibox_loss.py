@@ -44,8 +44,9 @@ class MultiBoxLoss(nn.Module):
         Args:
             predictions (tuple): A tuple containing loc preds, conf preds,
             and prior boxes from SSD net.
-                conf shape: torch.size(batch_size,num_priors,num_classes)
                 loc shape: torch.size(batch_size,num_priors,4)
+                conf shape: torch.size(batch_size,num_priors,num_classes)
+                landm shape: torch.size(batch_size,num_priors,10)
                 priors shape: torch.size(num_priors,4)
 
             ground_truth (tensor): Ground truth boxes and labels for a batch,
@@ -74,7 +75,7 @@ class MultiBoxLoss(nn.Module):
         landm_t = landm_t.to(device)
         zeros = torch.tensor(0, device=device)
 
-        # landm Loss (Smooth L1)
+        # NOTE: landm Loss (Smooth L1)
         # Shape: [batch,num_priors,10]
         pos1 = conf_t > zeros
         num_pos_landm = pos1.long().sum(1, keepdim=True)
@@ -88,7 +89,7 @@ class MultiBoxLoss(nn.Module):
         pos = conf_t != zeros
         conf_t[pos] = 1
 
-        # Localization Loss (Smooth L1)
+        # NOTE: Localization Loss (Smooth L1)
         # Shape: [batch,num_priors,4]
         pos_idx = pos.unsqueeze(pos.dim()).expand_as(loc_data)
         loc_p = loc_data[pos_idx].view(-1, 4)
@@ -99,7 +100,7 @@ class MultiBoxLoss(nn.Module):
         batch_conf = conf_data.view(-1, self.num_classes)
         loss_c = log_sum_exp(batch_conf) - batch_conf.gather(1, conf_t.view(-1, 1))
 
-        # Hard Negative Mining
+        # NOTE: Hard Negative Mining
         loss_c[pos.view(-1, 1)] = 0 # filter out pos boxes for now
         loss_c = loss_c.view(num, -1)
         _, loss_idx = loss_c.sort(1, descending=True)

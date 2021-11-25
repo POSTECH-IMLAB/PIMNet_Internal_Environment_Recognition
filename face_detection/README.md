@@ -38,11 +38,10 @@ We also provide a set of Face Detector for edge device in [here](https://github.
 
 ## Installation
 ##### Clone and install
-1. git clone https://github.com/biubug6/Pytorch_Retinaface.git
 
-2. Pytorch version 1.1.0+ and torchvision 0.3.0+ are needed.
+- Pytorch version 1.7.0+ and torchvision 0.8.1+ are needed.
 
-3. Codes are based on Python 3
+- Codes are based on Python 3
 
 ##### Data
 1. Download the [WIDERFACE](http://shuoyang1213.me/WIDERFACE/WiderFace_Results.html) dataset.
@@ -62,11 +61,6 @@ We also provide a set of Face Detector for edge device in [here](https://github.
 ```
 
 ps: wider_val.txt only include val file names but not label information.
-
-##### Data1
-We also provide the organized dataset we used as in the above directory structure.
-
-Link: from [google cloud](https://drive.google.com/open?id=11UGV3nbVv1x9IC--_tK3Uxf7hA6rlbsS) or [baidu cloud](https://pan.baidu.com/s/1jIp9t30oYivrAvrgUgIoLQ) Password: ruck
 
 ## Training
 We provide restnet50 and mobilenet0.25 as backbone network to train model.

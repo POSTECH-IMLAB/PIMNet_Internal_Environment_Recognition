@@ -16,7 +16,7 @@ from utils.timer import Timer
 from utils.utils import load_model
 
 parser = argparse.ArgumentParser(description='Retinaface')
-parser.add_argument('-m', '--trained-model', default='./weights/mobilenet0.25_final.pt',
+parser.add_argument('--checkpoint', default='./weights/mobilenet0.25_final.pt',
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--network', default='mobilenet0.25', choices={"mobilenet0.25", "resnet50"})
 parser.add_argument('--save-folder', default='eval/', type=str, help='Dir to save results')
@@ -38,7 +38,7 @@ def main():
 
     # net and model
     net = RetinaFace(**cfg)
-    net = load_model(net, args.trained_model, args.cpu, is_train=False)
+    net = load_model(net, args.checkpoint, args.cpu, is_train=False)
     # net = torch.jit.script(net)
     net.eval()
     print('Finished loading model!')

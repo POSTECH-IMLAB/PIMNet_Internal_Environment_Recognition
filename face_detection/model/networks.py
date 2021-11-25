@@ -39,6 +39,8 @@ def conv_dw(inp, oup, stride, leaky=0.1):
 
 
 class SSH(nn.Module):
+    # SSH: Single Stage Headless Face Detector
+    # https://arxiv.org/abs/1708.03979
     def __init__(self, in_channels, out_channels):
         super().__init__()
         assert out_channels % 4 == 0
