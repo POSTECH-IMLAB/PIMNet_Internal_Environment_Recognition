@@ -1,10 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from data import cfg_mnet
 from utils.box_utils import match, log_sum_exp
-
-GPU = cfg_mnet['gpu_train']
 
 
 class MultiBoxLoss(nn.Module):
@@ -59,6 +56,7 @@ class MultiBoxLoss(nn.Module):
         priors = priors
         num = loc_data.size(0)
         num_priors = (priors.size(0))
+        device = loc_data.device
 
         # match priors (default boxes) and ground truth boxes
         loc_t = torch.Tensor(num, num_priors, 4)
@@ -70,12 +68,12 @@ class MultiBoxLoss(nn.Module):
             landms = targets[idx][:, 4:14].data
             defaults = priors.data
             match(self.threshold, truths, defaults, self.variance, labels, landms, loc_t, conf_t, landm_t, idx)
-        if GPU:
-            loc_t = loc_t.cuda()
-            conf_t = conf_t.cuda()
-            landm_t = landm_t.cuda()
+        
+        loc_t = loc_t.to(device)
+        conf_t = conf_t.to(device)
+        landm_t = landm_t.to(device)
+        zeros = torch.tensor(0, device=device)
 
-        zeros = torch.tensor(0, device="cuda" if GPU else "cpu")
         # landm Loss (Smooth L1)
         # Shape: [batch,num_priors,10]
         pos1 = conf_t > zeros
