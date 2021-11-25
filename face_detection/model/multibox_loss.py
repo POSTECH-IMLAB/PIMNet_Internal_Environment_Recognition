@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from data import cfg_mnet
-from utils.box_utils import log_sum_exp
+from utils.box_utils import match, log_sum_exp
 
 GPU = cfg_mnet['gpu_train']
 
@@ -75,7 +75,7 @@ class MultiBoxLoss(nn.Module):
             conf_t = conf_t.cuda()
             landm_t = landm_t.cuda()
 
-        zeros = torch.tensor(0).cuda()
+        zeros = torch.tensor(0, device="cuda" if GPU else "cpu")
         # landm Loss (Smooth L1)
         # Shape: [batch,num_priors,10]
         pos1 = conf_t > zeros

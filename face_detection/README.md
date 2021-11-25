@@ -1,10 +1,4 @@
-# RetinaFace
-
-Code in this folder is obtained from [biubug6/Pytorch_Retinaface](https://github.com/biubug6/Pytorch_Retinaface).
----
-
-
-# RetinaFace in PyTorch (Original README)
+# RetinaFace in PyTorch
 
 A [PyTorch](https://pytorch.org/) implementation of [RetinaFace: Single-stage Dense Face Localisation in the Wild](https://arxiv.org/abs/1905.00641). Model size only 1.7M, when Retinaface use mobilenet0.25 as backbone net. We also provide resnet50 as backbone net to get better result. The official code in Mxnet can be found [here](https://github.com/deepinsight/insightface/tree/master/RetinaFace).
 
@@ -80,15 +74,14 @@ We trained Mobilenet0.25 on imagenet dataset and get 46.58%  in top 1. If you do
 ```bash
 ./weights/
 ├─mobilenet0.25_final.pt
-├─mobilenet0.25_pretrain.tar
-└─resnet50_final.pt
+└─mobilenet0.25_pretrain.tar
 ```
 1. Before training, you can check network configuration (e.g. batch_size, min_sizes and steps etc..) in ``data/config.py and train.py``.
 
 2. Train the model using WIDER FACE:
   ```Shell
   CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py --network resnet50 or
-  CUDA_VISIBLE_DEVICES=0 python train.py --network mobile0.25
+  CUDA_VISIBLE_DEVICES=0 python train.py --network mobilenet0.25
   ```
 
 
@@ -96,7 +89,7 @@ We trained Mobilenet0.25 on imagenet dataset and get 46.58%  in top 1. If you do
 ### Evaluation widerface val
 1. Generate txt file
 ```Shell
-python test_widerface.py --trained_model weight_file --network mobile0.25 or resnet50
+python test_widerface.py --trained-model weight_file --network mobilenet0.25 or resnet50
 ```
 2. Evaluate txt results. Demo come from [Here](https://github.com/wondervictor/WiderFace-Evaluation)
 ```Shell
@@ -114,7 +107,7 @@ python evaluation.py
 
 2. Evaluate the trained model using:
 ```Shell
-python test_fddb.py --trained_model weight_file --network mobile0.25 or resnet50
+python test_fddb.py --trained_model weight_file --network mobilenet0.25 or resnet50
 ```
 
 3. Download [eval_tool](https://bitbucket.org/marcopede/face-eval) to evaluate the performance.
