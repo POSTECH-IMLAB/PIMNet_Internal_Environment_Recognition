@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import argparse
-import os
 
 import cv2
 import numpy as np
@@ -63,19 +62,14 @@ def main():
         "misc": Timer(),
     }
 
-    # Webcam
+    # testing begin
     cap = cv2.VideoCapture(0)
     assert cap.isOpened()
-
-    # testing begin
-    # for i, img_name in enumerate(test_dataset):
-    #     image_path = testset_folder + img_name + '.jpg'
-    #     img_raw = cv2.imread(image_path, cv2.IMREAD_COLOR)
     while True:
         ret, img_raw = cap.read()
 
         # NOTE preprocessing.
-        _t["preprocess"].tic()
+        _t["runtime"].tic()
         img = np.float32(img_raw)
         if resize != 1:
             img = cv2.resize(img, None, None, fx=resize, fy=resize, interpolation=cv2.INTER_LINEAR)
@@ -86,15 +80,11 @@ def main():
         img = torch.from_numpy(img).unsqueeze(0)
         img = img.to(device)
         scale = scale.to(device)
-        _t["preprocess"].toc()
 
         # NOTE inference.
-        _t["inference"].tic()
         loc, conf, landms = net(img)  # forward pass
-        _t["inference"].toc()
 
         # NOTE misc.
-        _t["misc"].tic()
         priorbox = PriorBox(cfg, image_size=(im_height, im_width))
         priors = priorbox.forward()
         priors = priors.to(device)
@@ -122,10 +112,7 @@ def main():
         scores = scores[order][:args.top_k]
 
         # do NMS
-        _t["nms"].tic()
         keep = nms(boxes, scores, args.nms_threshold)
-        _t["nms"].toc()
-
         boxes = boxes[keep]
         scores = scores[keep]
         landms = landms[keep]
@@ -135,14 +122,9 @@ def main():
         landms = landms.cpu().numpy()
         dets = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
         dets = np.concatenate((dets, landms), axis=1)
-        _t["misc"].toc()
+        _t["runtime"].tic()
 
-        print(
-            f"preprocess_time: {_t['preprocess'].average_time:.4f}s\t"
-            f"inference_time: {_t['inference'].average_time:.4f}s\t"
-            f"nms_time: {_t['nms'].average_time:.4f}s\t"
-            f"misc_time: {_t['misc'].average_time:.4f}s"
-        )
+        print(f"runtime: {_t['preprocess'].average_time:.4f} sec/iter")
 
         # show image
         for b in dets[:5]:
@@ -167,7 +149,7 @@ def main():
         c = cv2.waitKey(1)
         if c == 27:
             break
-    
+
     cap.release()
     cv2.destroyAllWindows()
 
