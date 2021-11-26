@@ -55,12 +55,7 @@ def main():
     # testing scale
     resize = 1
 
-    _t = {
-        "preprocess": Timer(),
-        "inference": Timer(),
-        "nms": Timer(),
-        "misc": Timer(),
-    }
+    timer = Timer()
 
     # testing begin
     cap = cv2.VideoCapture(0)
@@ -69,7 +64,7 @@ def main():
         ret, img_raw = cap.read()
 
         # NOTE preprocessing.
-        _t["runtime"].tic()
+        timer.tic()
         img = np.float32(img_raw)
         if resize != 1:
             img = cv2.resize(img, None, None, fx=resize, fy=resize, interpolation=cv2.INTER_LINEAR)
@@ -122,9 +117,9 @@ def main():
         landms = landms.cpu().numpy()
         dets = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
         dets = np.concatenate((dets, landms), axis=1)
-        _t["runtime"].toc()
+        timer.toc()
 
-        print(f"runtime: {_t['runtime'].average_time:.4f} sec/iter")
+        print(f"runtime: {timer.average_time:.4f} sec/iter")
 
         # show image
         for b in dets[:5]:
