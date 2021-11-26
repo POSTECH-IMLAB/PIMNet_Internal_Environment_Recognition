@@ -38,8 +38,7 @@ def main():
     # net and model
     net = RetinaFace(**cfg)
     net = load_model(net, args.checkpoint, args.cpu, is_train=False)
-    # net = torch.jit.script(net)
-    net.eval()
+    net = torch.jit.script(net)
     print('Finished loading model!')
     cudnn.benchmark = True
     device = torch.device("cpu" if args.cpu else "cuda")
