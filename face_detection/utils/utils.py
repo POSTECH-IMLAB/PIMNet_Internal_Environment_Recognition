@@ -13,13 +13,9 @@ def check_keys(model, pretrained_state_dict):
     return len(used_pretrained_keys) > 0
 
 
-def load_model(model, checkpoint_path, load_to_cpu, is_train=False):
+def load_model(model, checkpoint_path, is_train=False):
     print('Loading pretrained model from {}'.format(checkpoint_path))
-    if load_to_cpu:
-        checkpoint = torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
-    else:
-        device = torch.cuda.current_device()
-        checkpoint = torch.load(checkpoint_path, map_location=lambda storage, loc: storage.cuda(device))
+    checkpoint = torch.load(checkpoint_path, map_location="cpu")
 
     state_dict = checkpoint["net_state_dict"]
     assert check_keys(model, state_dict), 'load NONE from pretrained checkpoint'

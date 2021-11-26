@@ -18,14 +18,15 @@ parser = argparse.ArgumentParser(description='Retinaface')
 parser.add_argument('--checkpoint', default='./weights/mobilenet0.25_final.pt',
                     type=str, help='Trained state_dict file path to open')
 parser.add_argument('--network', default='mobilenet0.25', choices={"mobilenet0.25", "resnet50"})
-parser.add_argument('--save-folder', default='eval/', type=str, help='Dir to save results')
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
+parser.add_argument('--jit', action="store_true", default=False, help='Use JIT')
 parser.add_argument('--confidence-threshold', default=0.02, type=float, help='confidence_threshold')
 parser.add_argument('--top-k', default=5000, type=int, help='top_k')
-parser.add_argument('--nms-threshold', default=0.4, type=float, help='nms_threshold')
 parser.add_argument('--keep-top-k', default=750, type=int, help='keep_top_k')
-parser.add_argument('-s', '--save-image', action="store_true", default=False, help='show detection results')
+parser.add_argument('--nms-threshold', default=0.4, type=float, help='nms_threshold')
 parser.add_argument('--vis-thres', default=0.5, type=float, help='visualization_threshold')
+parser.add_argument('-s', '--save-image', action="store_true", default=False, help='show detection results')
+parser.add_argument('--save-folder', default='eval/', type=str, help='Dir to save results')
 args = parser.parse_args()
 
 
@@ -35,63 +36,60 @@ def main():
     elif args.network == "resnet50":
         cfg = cfg_re50
 
+    device = torch.device("cpu" if args.cpu else "cuda")
     # net and model
     net = RetinaFace(**cfg)
-    net = load_model(net, args.checkpoint, args.cpu, is_train=False)
-    net = torch.jit.script(net)
+    net = load_model(net, args.checkpoint, is_train=False)
+    net.to(device)
     print('Finished loading model!')
     cudnn.benchmark = True
-    device = torch.device("cpu" if args.cpu else "cuda")
-    net = net.to(device)
-
-    # testing dataset
-    testset_folder = 'data/FDDB/images/'
-    testset_list = 'data/FDDB/img_list.txt'
-    with open(testset_list, 'r') as fr:
-        test_dataset = fr.read().split()
-    num_images = len(test_dataset)
-
-    # testing scale
-    resize = 1
 
     timer = Timer()
 
-    # testing begin
+    # prepare testing
     cap = cv2.VideoCapture(0)
     assert cap.isOpened()
+    ret, img_tmp = cap.read()
+    im_height, im_width, _ = img_tmp.shape
+    scale = torch.Tensor([im_width, im_height, im_width, im_height])
+    scale = scale.to(device)
+
+    scale1 = torch.Tensor([im_width, im_height] * 5)
+    scale1 = scale1.to(device)
+
+    priorbox = PriorBox(cfg, image_size=(im_height, im_width))
+    priors = priorbox.forward()
+    priors = priors.to(device)
+    prior_data = priors.data
+
+    if args.jit:
+        img_tmp = img_tmp.transpose(2, 0, 1)
+        img_tmp = np.float32(img_tmp)
+        img_tmp = torch.from_numpy(img_tmp).unsqueeze(0)
+        dummy = img_tmp.to(device)
+        net = torch.jit.trace(net, example_inputs=dummy)
+
+    # testing begin
     while True:
         ret, img_raw = cap.read()
 
         # NOTE preprocessing.
         timer.tic()
-        img = np.float32(img_raw)
-        if resize != 1:
-            img = cv2.resize(img, None, None, fx=resize, fy=resize, interpolation=cv2.INTER_LINEAR)
-        im_height, im_width, _ = img.shape
-        scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
-        img -= (104, 117, 123)
+        img = img_raw - (104, 117, 123)
         img = img.transpose(2, 0, 1)
+        img = np.float32(img)
         img = torch.from_numpy(img).unsqueeze(0)
         img = img.to(device)
-        scale = scale.to(device)
 
         # NOTE inference.
         loc, conf, landms = net(img)  # forward pass
 
         # NOTE misc.
-        priorbox = PriorBox(cfg, image_size=(im_height, im_width))
-        priors = priorbox.forward()
-        priors = priors.to(device)
-        prior_data = priors.data
         boxes = decode(loc.data.squeeze(0), prior_data, cfg['variance'])
-        boxes = boxes * scale / resize
+        boxes *= scale
         scores = conf.squeeze(0)[:, 1]
         landms = decode_landm(landms.data.squeeze(0), prior_data, cfg['variance'])
-        scale1 = torch.Tensor([img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2]])
-        scale1 = scale1.to(device)
-        landms = landms * scale1 / resize
+        landms *= scale1
 
         # ignore low scores
         inds = torch.where(scores > args.confidence_threshold)[0]
@@ -140,7 +138,7 @@ def main():
             cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
 
         cv2.imshow("Face Detection Demo", img_raw)
-        c = cv2.waitKey(1)
+        c = cv2.waitKey(1)  # Press ESC button to quit.
         if c == 27:
             break
 
@@ -150,4 +148,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

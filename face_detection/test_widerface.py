@@ -37,16 +37,15 @@ def main():
         cfg = cfg_mnet
     elif args.network == "resnet50":
         cfg = cfg_re50
+    
+    device = torch.device("cpu" if args.cpu else "cuda")
     # net and model
     net = RetinaFace(**cfg)
-    net = load_model(net, args.trained_model, args.cpu)
+    net = load_model(net, args.trained_model, is_train=False)
+    net.to(device)
     net = torch.jit.script(net)
-    net.eval()
     print('Finished loading model!')
-    print(net)
     torch.backends.cudnn.benchmark = True
-    device = torch.device("cpu" if args.cpu else "cuda")
-    net = net.to(device)
 
     # testing dataset
     testset_folder = args.dataset_folder
@@ -119,7 +118,6 @@ def main():
 
         # do NMS
         keep = nms(boxes, scores, args.nms_threshold)
-
         boxes = boxes[keep]
         scores = scores[keep]
         landms = landms[keep]

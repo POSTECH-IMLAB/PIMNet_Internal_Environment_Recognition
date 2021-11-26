@@ -21,6 +21,7 @@ parser.add_argument('--checkpoint', default='./weights/mobilenet0.25_final.pt',
 parser.add_argument('--network', default='mobilenet0.25', choices={"mobilenet0.25", "resnet50"})
 parser.add_argument('--save-folder', default='eval/', type=str, help='Dir to save results')
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
+parser.add_argument('--jit', action="store_true", default=False, help='Use JIT')
 parser.add_argument('--confidence-threshold', default=0.02, type=float, help='confidence_threshold')
 parser.add_argument('--top-k', default=5000, type=int, help='top_k')
 parser.add_argument('--nms-threshold', default=0.4, type=float, help='nms_threshold')
@@ -36,16 +37,15 @@ def main():
     elif args.network == "resnet50":
         cfg = cfg_re50
 
+    device = torch.device("cpu" if args.cpu else "cuda")
     # net and model
     net = RetinaFace(**cfg)
-    net = load_model(net, args.checkpoint, args.cpu, is_train=False)
-    # net = torch.jit.script(net)
-    net.eval()
+    net = load_model(net, args.checkpoint, is_train=False)
+    net.to(device)
+    if args.jit:
+        net = torch.jit.script(net)
     print('Finished loading model!')
     cudnn.benchmark = True
-    device = torch.device("cpu" if args.cpu else "cuda")
-    net = net.to(device)
-
 
     # save file
     os.makedirs(args.save_folder, exist_ok=True)
@@ -64,8 +64,8 @@ def main():
 
     _t = {
         "preprocess": Timer(),
-        "inference": Timer(),
-        "nms": Timer(),
+        "forward": Timer(),
+        "postprocess": Timer(),
         "misc": Timer(),
     }
 
@@ -76,25 +76,27 @@ def main():
 
         # NOTE preprocessing.
         _t["preprocess"].tic()
-        img = np.float32(img_raw)
+        img = img_raw - (104, 117, 123)
         if resize != 1:
             img = cv2.resize(img, None, None, fx=resize, fy=resize, interpolation=cv2.INTER_LINEAR)
         im_height, im_width, _ = img.shape
-        scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
-        img -= (104, 117, 123)
+        scale = torch.as_tensor(
+            [img.shape[1], img.shape[0], img.shape[1], img.shape[0]],
+            dtype=torch.float, device=device
+        )
         img = img.transpose(2, 0, 1)
+        img = np.float32(img)
         img = torch.from_numpy(img).unsqueeze(0)
         img = img.to(device)
-        scale = scale.to(device)
         _t["preprocess"].toc()
 
-        # NOTE inference.
-        _t["inference"].tic()
+        # NOTE forward.
+        _t["forward"].tic()
         loc, conf, landms = net(img)  # forward pass
-        _t["inference"].toc()
+        _t["forward"].toc()
 
         # NOTE misc.
-        _t["misc"].tic()
+        _t["postprocess"].tic()
         priorbox = PriorBox(cfg, image_size=(im_height, im_width))
         priors = priorbox.forward()
         priors = priors.to(device)
@@ -102,10 +104,9 @@ def main():
         boxes = decode(loc.data.squeeze(0), prior_data, cfg['variance'])
         boxes = boxes * scale / resize
         scores = conf.squeeze(0)[:, 1]
+
         landms = decode_landm(landms.data.squeeze(0), prior_data, cfg['variance'])
-        scale1 = torch.Tensor([img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2]])
+        scale1 = torch.Tensor([im_width, im_height] * 5)
         scale1 = scale1.to(device)
         landms = landms * scale1 / resize
 
@@ -120,12 +121,11 @@ def main():
         boxes = boxes[order][:args.top_k]
         landms = landms[order][:args.top_k]
         scores = scores[order][:args.top_k]
+        _t["postprocess"].toc()
 
         # do NMS
-        _t["nms"].tic()
+        _t["misc"].tic()
         keep = nms(boxes, scores, args.nms_threshold)
-        _t["nms"].toc()
-
         boxes = boxes[keep]
         scores = scores[keep]
         landms = landms[keep]
@@ -154,8 +154,8 @@ def main():
         print(
             f"im_detect: {i+1:d}/{num_images:d}\t"
             f"preprocess_time: {_t['preprocess'].average_time:.4f}s\t"
-            f"inference_time: {_t['inference'].average_time:.4f}s\t"
-            f"nms_time: {_t['nms'].average_time:.4f}s\t"
+            f"forward_time: {_t['forward'].average_time:.4f}s\t"
+            f"postprocess_time: {_t['postprocess'].average_time:.4f}s\t"
             f"misc_time: {_t['misc'].average_time:.4f}s"
         )
 
