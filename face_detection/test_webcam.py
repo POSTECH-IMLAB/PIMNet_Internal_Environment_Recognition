@@ -138,7 +138,6 @@ def main():
         _t["misc"].toc()
 
         print(
-            f"im_detect: {i+1:d}/{num_images:d}\t"
             f"preprocess_time: {_t['preprocess'].average_time:.4f}s\t"
             f"inference_time: {_t['inference'].average_time:.4f}s\t"
             f"nms_time: {_t['nms'].average_time:.4f}s\t"
@@ -165,7 +164,14 @@ def main():
             cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
 
         cv2.imshow("Face Detection Demo", img_raw)
+        c = cv2.waitKey(1)
+        if c == 27:
+            break
+    
+    cap.release()
+    cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
     main()
+
