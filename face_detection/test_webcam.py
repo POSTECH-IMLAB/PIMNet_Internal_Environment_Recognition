@@ -122,9 +122,9 @@ def main():
         landms = landms.cpu().numpy()
         dets = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
         dets = np.concatenate((dets, landms), axis=1)
-        _t["runtime"].tic()
+        _t["runtime"].toc()
 
-        print(f"runtime: {_t['preprocess'].average_time:.4f} sec/iter")
+        print(f"runtime: {_t['runtime'].average_time:.4f} sec/iter")
 
         # show image
         for b in dets[:5]:
