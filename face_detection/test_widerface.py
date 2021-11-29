@@ -18,6 +18,7 @@ parser.add_argument('-m', '--trained-model', default='./weights/resnet50_final.p
 parser.add_argument('--origin-size', default=True, type=str, help='Whether use origin image size to evaluate')
 parser.add_argument('--save-folder', default='./widerface_evaluate/widerface_txt/', type=str, help='Dir to save txt results')
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
+parser.add_argument('--jit', action="store_true", default=False, help='Use JIT')
 parser.add_argument('--dataset-folder', default='./data/widerface/val/images/', type=str, help='dataset path')
 parser.add_argument('--confidence-threshold', default=0.02, type=float, help='confidence_threshold')
 parser.add_argument('--top-k', default=5000, type=int, help='top_k')
@@ -37,12 +38,11 @@ def main():
 
     # net and model
     net = RetinaFace(**cfg)
-    net.load_state_dict(checkpoint["net_state_dict"], strict=False)
+    net.load_state_dict(checkpoint["net_state_dict"])
     net.eval().requires_grad_(False)
     net.to(device)
-    print('Finished loading model!')
-    
-    net = torch.jit.script(net)
+    if args.jit:
+        net = torch.jit.script(net)
     print('Finished loading model!')
     torch.backends.cudnn.benchmark = True
 

@@ -37,7 +37,7 @@ def main():
 
     # net and model
     net = RetinaFace(**cfg)
-    net.load_state_dict(checkpoint["net_state_dict"], strict=False)
+    net.load_state_dict(checkpoint["net_state_dict"])
     net.eval().requires_grad_(False)
     net.to(device)
     print('Finished loading model!')
