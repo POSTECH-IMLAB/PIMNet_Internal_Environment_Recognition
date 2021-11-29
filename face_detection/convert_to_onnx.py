@@ -5,16 +5,24 @@ import os
 import torch
 from model.retinaface import RetinaFace
 
-parser = argparse.ArgumentParser(description='Test')
-parser.add_argument('-m', '--trained_model', default='./weights/mobilenet0.25_final.pt',
-                    type=str, help='Trained state_dict file path to open')
-parser.add_argument('--long_side', default=640, help='when origin_size is false, long_side is scaled size(320 or 640 for long side)')
-parser.add_argument('--cpu', action="store_true", default=True, help='Use cpu inference')
-
-args = parser.parse_args()
+parser = argparse.ArgumentParser(description='Convert to ONNX')
+parser.add_argument(
+    '--checkpoint', type=str,
+    default='./weights/mobilenet0.25_final.pt',
+    help='Trained state_dict file path to open'
+)
+parser.add_argument(
+    '--long-side', type=int, default=640,
+    help='when origin_size is false, long_side is scaled size(320 or 640 for long side)'
+)
+parser.add_argument(
+    '--cpu', action="store_true",
+    help='Use cpu inference'
+)
 
 
 def main():
+    args = parser.parse_args()
     assert os.path.isfile(args.checkpoint)
 
     checkpoint = torch.load(args.checkpoint, map_location="cpu")

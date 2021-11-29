@@ -11,23 +11,47 @@ from torchvision.ops import nms
 from model.prior_box import PriorBox
 from model.retinaface import RetinaFace
 from utils.box_utils import decode, decode_landm
+from utils.misc import draw
 
 parser = argparse.ArgumentParser(description='Retinaface')
-
-parser.add_argument('-m', '--trained_model', default='./weights/resnet50_final.pt',
-                    type=str, help='Trained state_dict file path to open')
-parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
-parser.add_argument('--confidence-threshold', default=0.02, type=float, help='confidence_threshold')
-parser.add_argument('--top-k', default=5000, type=int, help='top_k')
-parser.add_argument('--nms-threshold', default=0.4, type=float, help='NMS threshold')
-parser.add_argument('--keep-top-k', default=750, type=int, help='keep top k')
-parser.add_argument('-s', '--save-image', action="store_true", default=True, help='show detection results')
-parser.add_argument('--vis-thres', default=0.6, type=float, help='visualization_threshold')
-args = parser.parse_args()
+parser.add_argument(
+    '--checkpoint', type=str,
+    default='./weights/mobilenet0.25_final.pt',
+    help='Trained state_dict file path to open'
+)
+parser.add_argument(
+    '--cpu', action="store_true", default=False,
+    help='Use cpu inference'
+)
+parser.add_argument(
+    '--confidence-threshold', type=float, default=0.02,
+    help='confidence_threshold'
+)
+parser.add_argument(
+    '--top-k', type=int, default=5000,
+    help='top_k'
+)
+parser.add_argument(
+    '--nms-threshold', type=float, default=0.4,
+    help='NMS threshold'
+)
+parser.add_argument(
+    '--keep-top-k', type=int, default=750,
+    help='keep top k'
+)
+parser.add_argument(
+    '-s', '--save-image', action="store_true", default=False,
+    help='show detection results'
+)
+parser.add_argument(
+    '--vis-thres', type=float, default=0.6,
+    help='visualization_threshold'
+)
 
 
 @torch.no_grad()
 def main():
+    args = parser.parse_args()
     assert os.path.isfile(args.checkpoint)
 
     checkpoint = torch.load(args.checkpoint, map_location="cpu")
@@ -101,27 +125,11 @@ def main():
         dets = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
         dets = np.concatenate((dets, landms), axis=1)
 
-        # show image
+        # save image
         if args.save_image:
-            for b in dets:
-                if b[4] < args.vis_thres:
-                    continue
-                text = "{:.4f}".format(b[4])
-                b = list(map(round, b))
-                cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-                cx = b[0]
-                cy = b[1] + 12
-                cv2.putText(img_raw, text, (cx, cy),
-                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+            draw(img_raw, dets, args.vis_thres)
 
-                # landms
-                cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), 4)
-                cv2.circle(img_raw, (b[7], b[8]), 1, (0, 255, 255), 4)
-                cv2.circle(img_raw, (b[9], b[10]), 1, (255, 0, 255), 4)
-                cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), 4)
-                cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
             # save image
-
             name = "test.jpg"
             cv2.imwrite(name, img_raw)
 

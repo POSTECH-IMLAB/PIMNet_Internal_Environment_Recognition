@@ -11,24 +11,47 @@ from torchvision.ops import nms
 from model.prior_box import PriorBox
 from model.retinaface import RetinaFace
 from utils.box_utils import decode, decode_landm
+from utils.misc import draw
 from utils.timer import Timer
 
 parser = argparse.ArgumentParser(description='Retinaface')
-parser.add_argument('--checkpoint', default='./weights/mobilenet0.25_final.pt',
-                    type=str, help='Trained state_dict file path to open')
-parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
-parser.add_argument('--jit', action="store_true", default=False, help='Use JIT')
-parser.add_argument('--confidence-threshold', default=0.02, type=float, help='confidence_threshold')
-parser.add_argument('--top-k', default=5000, type=int, help='top_k')
-parser.add_argument('--keep-top-k', default=750, type=int, help='keep_top_k')
-parser.add_argument('--nms-threshold', default=0.4, type=float, help='nms_threshold')
-parser.add_argument('--vis-thres', default=0.5, type=float, help='visualization_threshold')
-parser.add_argument('-s', '--save-image', action="store_true", default=False, help='show detection results')
-parser.add_argument('--save-dir', default='demo', type=str, help='Dir to save results')
-args = parser.parse_args()
+parser.add_argument(
+    '--checkpoint', type=str,
+    default='./weights/mobilenet0.25_final.pt',
+    help='Trained state_dict file path to open'
+)
+parser.add_argument(
+    '--cpu', action="store_true", default=False,
+    help='Use cpu inference'
+)
+parser.add_argument(
+    '--jit', action="store_true", default=False,
+    help='Use JIT'
+)
+parser.add_argument(
+    '--confidence-threshold', type=float, default=0.02,
+    help='confidence_threshold'
+)
+parser.add_argument(
+    '--nms-threshold', type=float, default=0.4,
+    help='nms_threshold'
+)
+parser.add_argument(
+    '--vis-thres', type=float, default=0.5,
+    help='visualization_threshold'
+)
+parser.add_argument(
+    '-s', '--save-image', action="store_true", default=False,
+    help='show detection results'
+)
+parser.add_argument(
+    '--save-dir', type=str, default='demo',
+    help='Dir to save results'
+)
 
 
 def main():
+    args = parser.parse_args()
     assert os.path.isfile(args.checkpoint)
 
     checkpoint = torch.load(args.checkpoint, map_location="cpu")
@@ -99,12 +122,6 @@ def main():
         landms = landms[inds]
         scores = scores[inds]
 
-        # keep top-K before NMS
-        order = scores.argsort()
-        boxes = boxes[order][:args.top_k]
-        landms = landms[order][:args.top_k]
-        scores = scores[order][:args.top_k]
-
         # do NMS
         keep = nms(boxes, scores, args.nms_threshold)
         boxes = boxes[keep]
@@ -121,39 +138,14 @@ def main():
         print(f"runtime: {timer.average_time:.4f} sec/iter")
 
         # show image
-        for b in dets[:5]:
-            if b[4] < args.vis_thres:
-                continue
-            text = f"{b[4]:.4f}"
-            b = list(map(round, b))
-            cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-            cx = b[0]
-            cy = b[1] + 12
-            cv2.putText(
-                img_raw, text, (cx, cy),
-                cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255)
-            )
-
-            text = f"{1.0 / timer.diff:.1f} fps"
-            cv2.putText(
-                img_raw, text, (5, 15),
-                cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255)
-            )
-
-            # landms
-            cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), 4)
-            cv2.circle(img_raw, (b[7], b[8]), 1, (0, 255, 255), 4)
-            cv2.circle(img_raw, (b[9], b[10]), 1, (255, 0, 255), 4)
-            cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), 4)
-            cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
+        draw(img, dets, args.vis_thres, timer.diff)
 
         if args.save_image:
-            cv2.imwrite(fname.format(nframe), img_raw)
+            cv2.imwrite(fname.format(nframe), img)
             nframe += 1
-    
-        cv2.imshow("Face Detection Demo", img_raw)
-        c = cv2.waitKey(1)  # Press ESC button to quit.
-        if c == 27:
+
+        cv2.imshow("Face Detection Demo", img)
+        if cv2.waitKey(1) == 27:  # Press ESC button to quit.
             break
 
         ret_val, img_raw = cap.read()

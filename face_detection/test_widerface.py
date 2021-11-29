@@ -10,11 +10,15 @@ from torchvision.ops import nms
 from model.prior_box import PriorBox
 from model.retinaface import RetinaFace
 from utils.box_utils import decode, decode_landm
+from utils.misc import draw
 from utils.timer import Timer
 
 parser = argparse.ArgumentParser(description='Retinaface')
-parser.add_argument('-m', '--trained-model', default='./weights/resnet50_final.pt',
-                    type=str, help='Trained state_dict file path to open')
+parser.add_argument(
+    '--checkpoint', type=str,
+    default='./weights/mobilenet0.25_final.pt',
+    help='Trained state_dict file path to open'
+)
 parser.add_argument('--origin-size', default=True, type=str, help='Whether use origin image size to evaluate')
 parser.add_argument('--save-folder', default='./widerface_evaluate/widerface_txt/', type=str, help='Dir to save txt results')
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
@@ -26,10 +30,10 @@ parser.add_argument('--nms-threshold', default=0.4, type=float, help='nms_thresh
 parser.add_argument('--keep-top-k', default=750, type=int, help='keep_top_k')
 parser.add_argument('-s', '--save-image', action="store_true", default=False, help='show detection results')
 parser.add_argument('--vis-thres', default=0.5, type=float, help='visualization_threshold')
-args = parser.parse_args()
 
 
 def main():
+    args = parser.parse_args()
     assert os.path.isfile(args.checkpoint)
 
     checkpoint = torch.load(args.checkpoint, map_location="cpu")
@@ -153,23 +157,7 @@ def main():
 
         # save image
         if args.save_image:
-            for b in dets:
-                if b[4] < args.vis_thres:
-                    continue
-                text = f"{b[4]:.4f}"
-                b = list(map(round, b))
-                cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
-                cx = b[0]
-                cy = b[1] + 12
-                cv2.putText(img_raw, text, (cx, cy),
-                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
-
-                # landms
-                cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), 4)
-                cv2.circle(img_raw, (b[7], b[8]), 1, (0, 255, 255), 4)
-                cv2.circle(img_raw, (b[9], b[10]), 1, (255, 0, 255), 4)
-                cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), 4)
-                cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
+            draw(img_raw, dets, args.vis_thres)
 
             # save image
             cv2.imwrite(f"./results/{i:05d}.jpg", img_raw)

@@ -31,5 +31,5 @@ class PriorBox:
         # back to torch land
         output = torch.Tensor(anchors).view(-1, 4)
         if self.clip:
-            output.clamp_(max=1, min=0)
+            output.clamp_(min=0, max=1)
         return output
