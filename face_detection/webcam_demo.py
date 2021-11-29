@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import argparse
+import os
 
 import cv2
 import numpy as np
@@ -7,17 +8,14 @@ import torch
 import torch.backends.cudnn as cudnn
 from torchvision.ops import nms
 
-from data import cfg_mnet, cfg_re50
 from model.prior_box import PriorBox
 from model.retinaface import RetinaFace
 from utils.box_utils import decode, decode_landm
 from utils.timer import Timer
-from utils.utils import load_model
 
 parser = argparse.ArgumentParser(description='Retinaface')
 parser.add_argument('--checkpoint', default='./weights/mobilenet0.25_final.pt',
                     type=str, help='Trained state_dict file path to open')
-parser.add_argument('--network', default='mobilenet0.25', choices={"mobilenet0.25", "resnet50"})
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
 parser.add_argument('--jit', action="store_true", default=False, help='Use JIT')
 parser.add_argument('--confidence-threshold', default=0.02, type=float, help='confidence_threshold')
@@ -26,30 +24,29 @@ parser.add_argument('--keep-top-k', default=750, type=int, help='keep_top_k')
 parser.add_argument('--nms-threshold', default=0.4, type=float, help='nms_threshold')
 parser.add_argument('--vis-thres', default=0.5, type=float, help='visualization_threshold')
 parser.add_argument('-s', '--save-image', action="store_true", default=False, help='show detection results')
-parser.add_argument('--save-folder', default='eval/', type=str, help='Dir to save results')
+parser.add_argument('--save-dir', default='demo', type=str, help='Dir to save results')
 args = parser.parse_args()
 
 
 def main():
-    if args.network == "mobilenet0.25":
-        cfg = cfg_mnet
-    elif args.network == "resnet50":
-        cfg = cfg_re50
+    assert os.path.isfile(args.checkpoint)
 
+    checkpoint = torch.load(args.checkpoint, map_location="cpu")
+    cfg = checkpoint["config"]
     device = torch.device("cpu" if args.cpu else "cuda")
+
     # net and model
     net = RetinaFace(**cfg)
-    net = load_model(net, args.checkpoint, is_train=False)
+    net.load_state_dict(checkpoint["net_state_dict"], strict=False)
+    net.eval().requires_grad_(False)
     net.to(device)
     print('Finished loading model!')
     cudnn.benchmark = True
 
-    timer = Timer()
-
     # prepare testing
     cap = cv2.VideoCapture(0)
     assert cap.isOpened()
-    ret, img_tmp = cap.read()
+    ret_val, img_tmp = cap.read()
     im_height, im_width, _ = img_tmp.shape
     scale = torch.Tensor([im_width, im_height, im_width, im_height])
     scale = scale.to(device)
@@ -69,9 +66,15 @@ def main():
         dummy = img_tmp.to(device)
         net = torch.jit.trace(net, example_inputs=dummy)
 
+    timer = Timer()
+    if args.save_image:
+        nframe = 0
+        fname = os.path.join(args.save_dir, "{:06d}.jpg")
+        os.makedirs(args.save_dir, exist_ok=True)
+
     # testing begin
-    while True:
-        ret, img_raw = cap.read()
+    while ret_val:
+        ret_val, img_raw = cap.read()
 
         # NOTE preprocessing.
         timer.tic()
@@ -122,13 +125,21 @@ def main():
         for b in dets[:5]:
             if b[4] < args.vis_thres:
                 continue
-            text = "{:.4f}".format(b[4])
-            b = list(map(int, b))
+            text = f"{b[4]:.4f}"
+            b = list(map(round, b))
             cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
             cx = b[0]
             cy = b[1] + 12
-            cv2.putText(img_raw, text, (cx, cy),
-                        cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+            cv2.putText(
+                img_raw, text, (cx, cy),
+                cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255)
+            )
+
+            text = f"{1.0 / timer.diff:.1f} fps"
+            cv2.putText(
+                img_raw, text, (5, 15),
+                cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255)
+            )
 
             # landms
             cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), 4)
@@ -137,6 +148,10 @@ def main():
             cv2.circle(img_raw, (b[11], b[12]), 1, (0, 255, 0), 4)
             cv2.circle(img_raw, (b[13], b[14]), 1, (255, 0, 0), 4)
 
+        if args.save_image:
+            cv2.imwrite(fname.format(nframe), img_raw)
+            nframe += 1
+    
         cv2.imshow("Face Detection Demo", img_raw)
         c = cv2.waitKey(1)  # Press ESC button to quit.
         if c == 27:

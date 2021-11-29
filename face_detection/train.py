@@ -14,7 +14,6 @@ from data import (WiderFaceDetection, cfg_mnet, cfg_re50, detection_collate,
 from model.prior_box import PriorBox
 from model.multibox_loss import MultiBoxLoss
 from model.retinaface import RetinaFace
-from utils.utils import load_model
 
 parser = argparse.ArgumentParser(description='Retinaface Training')
 parser.add_argument('--dataset', default='./data/widerface/train/label.txt', help='Training dataset directory')
@@ -54,24 +53,23 @@ training_dataset = args.dataset
 save_folder = args.save_folder
 
 
-def initialize_network():
+def initialize_network(cfg, checkpoint=None):
     net = RetinaFace(**cfg)
     print("Printing net...")
     print(net)
-
-    if args.resume_net is not None and os.path.isfile(args.resume_net):
+    if checkpoint is not None:
         print('Loading resume network...')
-        net = load_model(net, args.resume_net, True, argsis_train=True)
+        net.load_state_dict(checkpoint["net_state_dict"])
 
     if num_gpu > 1 and gpu_train:
         net = torch.nn.DataParallel(net).cuda()
-    else:
+    if gpu_train and torch.cuda.is_available():
         net = net.cuda()
-    return net
+    return cfg, net
 
 
-def train(net, optimizer, criterion, dataloader):
-    priorbox = PriorBox(cfg, image_size=(img_dim, img_dim))
+def train(net, optimizer, criterion, dataloader, cfg):
+    priorbox = PriorBox(cfg, image_size=(cfg['image_size'],)*2)
     with torch.no_grad():
         priors = priorbox.forward()
         priors = priors.cuda()
@@ -108,6 +106,7 @@ def train(net, optimizer, criterion, dataloader):
                     {
                         "net_state_dict": net_state_dict,
                         "epoch": epoch,
+                        "config": cfg,
                     }, save_folder + f"{cfg['backbone']}_epoch{epoch:03d}.pt"
                 )
             epoch += 1
@@ -129,16 +128,21 @@ def train(net, optimizer, criterion, dataloader):
         load_t1 = time.perf_counter()
         batch_time = load_t1 - load_t0
         eta = int(batch_time * (max_iter - iteration))
-        print(f"Epoch:{epoch:03d}/{max_epoch:03d} "
-              '|| Epochiter: {}/{} || Iter: {}/{} || Loc: {:.4f} Cla: {:.4f} Landm: {:.4f} || LR: {:.8f} || Batchtime: {:.4f} s || ETA: {}'
-              .format((iteration % epoch_size) + 1,
-              epoch_size, iteration+1, max_iter, loss_l.item(), loss_c.item(), loss_landm.item(), lr, batch_time, str(datetime.timedelta(seconds=eta))))
+        print(
+            f"Epoch:{epoch:03d}/{max_epoch:03d} "
+            f'|| Epochiter: {(iteration % epoch_size)+1}/{epoch_size} '
+            f'|| Iter: {iteration+1}/{max_iter} '
+            f'|| Loc: {loss_l.item():.4f} Cla: {loss_c.item():.4f} Landm: {loss_landm.item():.4f} '
+            f'|| LR: {lr:.8f} || Batchtime: {batch_time:.4f} s '
+            f'|| ETA: {str(datetime.timedelta(seconds=eta))}'
+        )
 
     net_state_dict = net.module.state_dict() if hasattr(net, "module") else net.state_dict()
     torch.save(
         {
             "net_state_dict": net_state_dict,
             "epoch": epoch,
+            "config": cfg,
         }, save_folder + f"{cfg['backbone']}_final.pt"
     )
 
@@ -159,7 +163,17 @@ def adjust_learning_rate(optimizer, gamma, epoch, step_index, iteration, epoch_s
 
 
 def main():
-    net = initialize_network()
+    if args.resume_net is not None and os.path.isfile(args.resume_net):
+        checkpoint = torch.load(args.resume_net, map_location="cpu")
+        cfg = checkpoint["config"]
+    else:
+        checkpoint = None
+        if args.network == "mobilenet0.25":
+            cfg = cfg_mnet
+        elif args.network == "resnet50":
+            cfg = cfg_re50
+
+    cfg, net = initialize_network(cfg, checkpoint)
     torch.backends.cudnn.benchmark = True
 
     optimizer = optim.SGD(net.parameters(), lr=initial_lr, momentum=momentum, weight_decay=weight_decay)
@@ -170,7 +184,7 @@ def main():
         dataset, batch_size, shuffle=True, num_workers=num_workers, collate_fn=detection_collate
     )
 
-    train(net, optimizer, criterion, dataloader)
+    train(net, optimizer, criterion, dataloader, cfg)
 
 
 if __name__ == '__main__':

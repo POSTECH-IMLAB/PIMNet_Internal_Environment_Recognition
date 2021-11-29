@@ -8,17 +8,14 @@ import torch
 import torch.backends.cudnn as cudnn
 from torchvision.ops import nms
 
-from data import cfg_mnet, cfg_re50
 from model.prior_box import PriorBox
 from model.retinaface import RetinaFace
 from utils.box_utils import decode, decode_landm
 from utils.timer import Timer
-from utils.utils import load_model
 
 parser = argparse.ArgumentParser(description='Retinaface')
 parser.add_argument('--checkpoint', default='./weights/mobilenet0.25_final.pt',
                     type=str, help='Trained state_dict file path to open')
-parser.add_argument('--network', default='mobilenet0.25', choices={"mobilenet0.25", "resnet50"})
 parser.add_argument('--save-folder', default='eval/', type=str, help='Dir to save results')
 parser.add_argument('--cpu', action="store_true", default=False, help='Use cpu inference')
 parser.add_argument('--jit', action="store_true", default=False, help='Use JIT')
@@ -32,15 +29,16 @@ args = parser.parse_args()
 
 
 def main():
-    if args.network == "mobilenet0.25":
-        cfg = cfg_mnet
-    elif args.network == "resnet50":
-        cfg = cfg_re50
+    assert os.path.isfile(args.checkpoint)
 
+    checkpoint = torch.load(args.checkpoint, map_location="cpu")
+    cfg = checkpoint["config"]
     device = torch.device("cpu" if args.cpu else "cuda")
+
     # net and model
     net = RetinaFace(**cfg)
-    net = load_model(net, args.checkpoint, is_train=False)
+    net.load_state_dict(checkpoint["net_state_dict"], strict=False)
+    net.eval().requires_grad_(False)
     net.to(device)
     if args.jit:
         net = torch.jit.script(net)
@@ -50,7 +48,6 @@ def main():
     # save file
     os.makedirs(args.save_folder, exist_ok=True)
     fw = open(os.path.join(args.save_folder, 'FDDB_dets.txt'), 'w')
-
 
     # testing dataset
     testset_folder = 'data/FDDB/images/'
@@ -164,13 +161,15 @@ def main():
             for b in dets[:5]:
                 if b[4] < args.vis_thres:
                     continue
-                text = "{:.4f}".format(b[4])
-                b = list(map(int, b))
+                text = f"{b[4]:.4f}"
+                b = list(map(round, b))
                 cv2.rectangle(img_raw, (b[0], b[1]), (b[2], b[3]), (0, 0, 255), 2)
                 cx = b[0]
                 cy = b[1] + 12
-                cv2.putText(img_raw, text, (cx, cy),
-                            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255))
+                cv2.putText(
+                    img_raw, text, (cx, cy),
+                    cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255)
+                )
 
                 # landms
                 cv2.circle(img_raw, (b[5], b[6]), 1, (0, 0, 255), 4)
