@@ -138,13 +138,13 @@ def main():
         print(f"runtime: {timer.average_time:.4f} sec/iter")
 
         # show image
-        draw(img, dets, args.vis_thres, timer.diff)
+        draw(img_raw, dets, args.vis_thres, timer.diff)
 
         if args.save_image:
-            cv2.imwrite(fname.format(nframe), img)
+            cv2.imwrite(fname.format(nframe), img_raw)
             nframe += 1
 
-        cv2.imshow("Face Detection Demo", img)
+        cv2.imshow("Face Detection Demo", img_raw)
         if cv2.waitKey(1) == 27:  # Press ESC button to quit.
             break
 
