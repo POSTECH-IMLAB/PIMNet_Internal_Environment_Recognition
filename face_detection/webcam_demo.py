@@ -73,9 +73,8 @@ def main():
         os.makedirs(args.save_dir, exist_ok=True)
 
     # testing begin
+    ret_val, img_raw = cap.read()
     while ret_val:
-        ret_val, img_raw = cap.read()
-
         # NOTE preprocessing.
         timer.tic()
         img = img_raw - (104, 117, 123)
@@ -156,6 +155,8 @@ def main():
         c = cv2.waitKey(1)  # Press ESC button to quit.
         if c == 27:
             break
+
+        ret_val, img_raw = cap.read()
 
     cap.release()
     cv2.destroyAllWindows()
