@@ -46,14 +46,19 @@ class RetinaFace(nn.Module):
         assert backbone in ("mobilenet0.25", "resnet50")
         if backbone == "mobilenet0.25":
             model = MobileNetV1()
-            checkpoint = torch.load("./weights/mobilenet0.25_pretrain.tar", map_location="cpu")
-            from collections import OrderedDict
-            new_state_dict = OrderedDict()
-            for k, v in checkpoint['state_dict'].items():
-                name = k[7:]  # remove module.
-                new_state_dict[name] = v
-            # load params
-            model.load_state_dict(new_state_dict)
+            try:
+                checkpoint = torch.load(
+                    "./weights/mobilenet0.25_pretrain.tar", map_location="cpu"
+                )
+                from collections import OrderedDict
+                new_state_dict = OrderedDict()
+                for k, v in checkpoint['state_dict'].items():
+                    name = k[7:]  # remove module.
+                    new_state_dict[name] = v
+                # load params
+                model.load_state_dict(new_state_dict)
+            except:
+                pass
             return_nodes={
                 "stage1": "feat0",
                 "stage2": "feat1",
