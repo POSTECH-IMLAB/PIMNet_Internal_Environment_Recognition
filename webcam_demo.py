@@ -6,12 +6,10 @@ import cv2
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-from torchvision.ops import nms
 
 from face_detection.model.prior_box import PriorBox
 from face_detection.model.retinaface import RetinaFace
-from face_detection.utils.box_utils import decode, decode_landm
-from face_detection.utils.misc import draw
+from face_detection.utils.misc import draw, inference
 from face_detection.utils.timer import Timer
 
 parser = argparse.ArgumentParser(description='Retinaface')
@@ -59,10 +57,10 @@ def main():
     device = torch.device("cpu" if args.cpu else "cuda")
 
     # net and model
-    net = RetinaFace(**cfg)
-    net.load_state_dict(checkpoint["net_state_dict"])
-    net.eval().requires_grad_(False)
-    net.to(device)
+    detector = RetinaFace(**cfg)
+    detector.load_state_dict(checkpoint["net_state_dict"])
+    detector.eval().requires_grad_(False)
+    detector.to(device)
     print('Finished loading model!')
     cudnn.benchmark = True
 
@@ -87,7 +85,7 @@ def main():
         img_tmp = np.float32(img_tmp)
         img_tmp = torch.from_numpy(img_tmp).unsqueeze(0)
         dummy = img_tmp.to(device)
-        net = torch.jit.trace(net, example_inputs=dummy)
+        detector = torch.jit.trace(detector, example_inputs=dummy)
 
     timer = Timer()
     if args.save_image:
@@ -100,39 +98,11 @@ def main():
     while ret_val:
         # NOTE preprocessing.
         timer.tic()
-        img = img_raw - (104, 117, 123)
-        img = img.transpose(2, 0, 1)
-        img = np.float32(img)
-        img = torch.from_numpy(img).unsqueeze(0)
-        img = img.to(device)
+        dets = inference(
+            detector, img_raw, scale, scale1, prior_data, cfg,
+            args.confidence_threshold, args.nms_threshold, device
+        )
 
-        # NOTE inference.
-        loc, conf, landms = net(img)  # forward pass
-
-        # NOTE misc.
-        boxes = decode(loc.data.squeeze(0), prior_data, cfg['variance'])
-        boxes *= scale
-        scores = conf.squeeze(0)[:, 1]
-        landms = decode_landm(landms.data.squeeze(0), prior_data, cfg['variance'])
-        landms *= scale1
-
-        # ignore low scores
-        inds = torch.where(scores > args.confidence_threshold)[0]
-        boxes = boxes[inds]
-        landms = landms[inds]
-        scores = scores[inds]
-
-        # do NMS
-        keep = nms(boxes, scores, args.nms_threshold)
-        boxes = boxes[keep]
-        scores = scores[keep]
-        landms = landms[keep]
-
-        boxes = boxes.cpu().numpy()
-        scores = scores.cpu().numpy()
-        landms = landms.cpu().numpy()
-        dets = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
-        dets = np.concatenate((dets, landms), axis=1)
         timer.toc()
 
         print(f"runtime: {timer.average_time:.4f} sec/iter")

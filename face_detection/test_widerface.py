@@ -82,12 +82,14 @@ def main():
         if resize != 1:
             img = cv2.resize(img, None, None, fx=resize, fy=resize, interpolation=cv2.INTER_LINEAR)
         im_height, im_width, _ = img.shape
-        scale = torch.Tensor([img.shape[1], img.shape[0], img.shape[1], img.shape[0]])
+        scale = torch.as_tensor(
+            [im_width, im_height, im_width, im_height],
+            dtype=torch.float, device=device
+        )
         img -= (104, 117, 123)
         img = img.transpose(2, 0, 1)
         img = torch.from_numpy(img).unsqueeze(0)
         img = img.to(device)
-        scale = scale.to(device)
 
         _t['forward_pass'].tic()
         loc, conf, landms = net(img)  # forward pass
@@ -101,10 +103,9 @@ def main():
         boxes = boxes * scale / resize
         scores = conf.squeeze(0)[:, 1]
         landms = decode_landm(landms.data.squeeze(0), prior_data, cfg['variance'])
-        scale1 = torch.Tensor([img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2], img.shape[3], img.shape[2],
-                               img.shape[3], img.shape[2]])
-        scale1 = scale1.to(device)
+        scale1 = torch.as_tensor(
+            [im_width, im_height] * 5, dtype=torch.float, device=device
+        )
         landms = landms * scale1 / resize
 
         # ignore low scores
