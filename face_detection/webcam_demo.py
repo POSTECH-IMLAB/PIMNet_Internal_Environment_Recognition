@@ -6,12 +6,10 @@ import cv2
 import numpy as np
 import torch
 import torch.backends.cudnn as cudnn
-from torchvision.ops import nms
 
 from model.prior_box import PriorBox
 from model.retinaface import RetinaFace
-from utils.box_utils import decode, decode_landm
-from utils.misc import draw
+from utils.misc import draw, inference
 from utils.timer import Timer
 
 parser = argparse.ArgumentParser(description='Retinaface')
@@ -100,39 +98,10 @@ def main():
     while ret_val:
         # NOTE preprocessing.
         timer.tic()
-        img = img_raw - (104, 117, 123)
-        img = img.transpose(2, 0, 1)
-        img = np.float32(img)
-        img = torch.from_numpy(img).unsqueeze(0)
-        img = img.to(device)
-
-        # NOTE inference.
-        loc, conf, landms = net(img)  # forward pass
-
-        # NOTE misc.
-        boxes = decode(loc.data.squeeze(0), prior_data, cfg['variance'])
-        boxes *= scale
-        scores = conf.squeeze(0)[:, 1]
-        landms = decode_landm(landms.data.squeeze(0), prior_data, cfg['variance'])
-        landms *= scale1
-
-        # ignore low scores
-        inds = torch.where(scores > args.confidence_threshold)[0]
-        boxes = boxes[inds]
-        landms = landms[inds]
-        scores = scores[inds]
-
-        # do NMS
-        keep = nms(boxes, scores, args.nms_threshold)
-        boxes = boxes[keep]
-        scores = scores[keep]
-        landms = landms[keep]
-
-        boxes = boxes.cpu().numpy()
-        scores = scores.cpu().numpy()
-        landms = landms.cpu().numpy()
-        dets = np.hstack((boxes, scores[:, np.newaxis])).astype(np.float32, copy=False)
-        dets = np.concatenate((dets, landms), axis=1)
+        dets = inference(
+            net, img_raw, scale, scale1, prior_data, cfg,
+            args.confidence_threshold, args.nms_threshold, device
+        )
         timer.toc()
 
         print(f"runtime: {timer.average_time:.4f} sec/iter")

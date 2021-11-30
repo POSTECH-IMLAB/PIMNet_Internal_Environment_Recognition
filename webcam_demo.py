@@ -102,7 +102,6 @@ def main():
             detector, img_raw, scale, scale1, prior_data, cfg,
             args.confidence_threshold, args.nms_threshold, device
         )
-
         timer.toc()
 
         print(f"runtime: {timer.average_time:.4f} sec/iter")
