@@ -9,10 +9,9 @@ import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
-from data import (WiderFaceDetection, cfg_mnet, cfg_re50, detection_collate,
-                  preproc)
-from model.prior_box import PriorBox
+from data import WiderFaceDetection, cfg_mnet, cfg_re50, preproc
 from model.multibox_loss import MultiBoxLoss
+from model.prior_box import PriorBox
 from model.retinaface import RetinaFace
 
 parser = argparse.ArgumentParser(description='Retinaface Training')
@@ -37,16 +36,10 @@ elif args.network == "resnet50":
     cfg = cfg_re50
 
 rgb_mean = (104, 117, 123) # bgr order
-num_classes = 2
 img_dim = cfg['image_size']
-num_gpu = cfg['ngpu']
 batch_size = cfg['batch_size']
 max_epoch = cfg['epoch']
-gpu_train = cfg['gpu_train']
 
-num_workers = args.num_workers
-momentum = args.momentum
-weight_decay = args.weight_decay
 initial_lr = args.lr
 gamma = args.gamma
 training_dataset = args.dataset
@@ -61,14 +54,20 @@ def initialize_network(cfg, checkpoint=None):
         print('Loading resume network...')
         net.load_state_dict(checkpoint["net_state_dict"])
 
-    if num_gpu > 1 and gpu_train:
-        net = torch.nn.DataParallel(net).cuda()
-    if gpu_train and torch.cuda.is_available():
-        net = net.cuda()
+    if torch.cuda.is_available():
+        net.cuda()
+    num_gpu = torch.cuda.device_count()
+    if num_gpu > 1:
+        net = torch.nn.DataParallel(net)
     return cfg, net
 
 
-def train(net, optimizer, criterion, dataloader, cfg):
+def training_loop(net, optimizer, criterion, dataloader, cfg):
+    assert isinstance(net, torch.nn.Module)
+    assert isinstance(optimizer, optim.Optimizer)
+    assert isinstance(dataloader, DataLoader)
+    assert isinstance(cfg, dict)
+
     priorbox = PriorBox(cfg, image_size=(cfg['image_size'],)*2)
     with torch.no_grad():
         priors = priorbox.forward()
@@ -84,10 +83,9 @@ def train(net, optimizer, criterion, dataloader, cfg):
     stepvalues = (cfg['decay1'] * epoch_size, cfg['decay2'] * epoch_size)
     step_index = 0
 
+    start_iter = 0
     if args.resume_epoch > 0:
-        start_iter = args.resume_epoch * epoch_size
-    else:
-        start_iter = 0
+        start_iter += args.resume_epoch * epoch_size
 
     for iteration in range(start_iter, max_iter):
         load_t0 = time.perf_counter()
@@ -126,16 +124,17 @@ def train(net, optimizer, criterion, dataloader, cfg):
         optimizer.step()
 
         load_t1 = time.perf_counter()
-        batch_time = load_t1 - load_t0
-        eta = int(batch_time * (max_iter - iteration))
-        print(
-            f"Epoch:{epoch:03d}/{max_epoch:03d} "
-            f'|| Epochiter: {(iteration % epoch_size)+1}/{epoch_size} '
-            f'|| Iter: {iteration+1}/{max_iter} '
-            f'|| Loc: {loss_l.item():.4f} Cla: {loss_c.item():.4f} Landm: {loss_landm.item():.4f} '
-            f'|| LR: {lr:.8f} || Batchtime: {batch_time:.4f} s '
-            f'|| ETA: {str(datetime.timedelta(seconds=eta))}'
-        )
+        if (iteration + 1) % 10 == 0:
+            batch_time = load_t1 - load_t0
+            eta = int(batch_time * (max_iter - iteration))
+            print(
+                f"Epoch:{epoch:03d}/{max_epoch:03d} "
+                f'|| Epochiter: {(iteration % epoch_size)+1}/{epoch_size} '
+                f'|| Iter: {iteration+1}/{max_iter} '
+                f'|| Loc: {loss_l.item():.3f} Cla: {loss_c.item():.3f} Landm: {loss_landm.item():.3f} '
+                f'|| LR: {lr:.8f} || Batchtime: {batch_time:.4f} s '
+                f'|| ETA: {str(datetime.timedelta(seconds=eta))}'
+            )
 
     net_state_dict = net.module.state_dict() if hasattr(net, "module") else net.state_dict()
     torch.save(
@@ -176,15 +175,19 @@ def main():
     cfg, net = initialize_network(cfg, checkpoint)
     torch.backends.cudnn.benchmark = True
 
-    optimizer = optim.SGD(net.parameters(), lr=initial_lr, momentum=momentum, weight_decay=weight_decay)
-    criterion = MultiBoxLoss(num_classes, 0.35, True, 0, True, 7, 0.35, False)
+    optimizer = optim.SGD(
+        net.parameters(), lr=initial_lr,
+        momentum=args.momentum, weight_decay=args.weight_decay,
+    )
+    criterion = MultiBoxLoss(2, 0.35, True, 0, True, 7, 0.35, False)
     
     dataset = WiderFaceDetection(training_dataset, preproc(img_dim, rgb_mean))
     dataloader = DataLoader(
-        dataset, batch_size, shuffle=True, num_workers=num_workers, collate_fn=detection_collate
+        dataset, batch_size, shuffle=True,
+        num_workers=args.num_workers, collate_fn=dataset.collate,
     )
 
-    train(net, optimizer, criterion, dataloader, cfg)
+    training_loop(net, optimizer, criterion, dataloader, cfg)
 
 
 if __name__ == '__main__':

@@ -8,7 +8,6 @@ from .networks import SSH, MobileNetV1
 
 
 class ClassHead(nn.Conv2d):
-
     def __init__(self, in_channels=512, num_anchors=3):
         super().__init__(in_channels, num_anchors*2, kernel_size=1)
         self.num_anchors = num_anchors
@@ -40,7 +39,6 @@ class LandmarkHead(nn.Conv2d):
 
 
 class RetinaFace(nn.Module):
-
     def __init__(self, backbone, in_channel, out_channel, **kwargs):
         super().__init__()
         assert backbone in ("mobilenet0.25", "resnet50")

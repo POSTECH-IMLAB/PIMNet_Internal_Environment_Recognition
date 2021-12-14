@@ -70,7 +70,6 @@ class SSH(nn.Module):
 
 
 class MobileNetV1(nn.Module):
-
     def __init__(self, width=0.25):
         super().__init__()
         self.stage1 = nn.Sequential(
