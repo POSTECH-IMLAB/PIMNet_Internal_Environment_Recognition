@@ -6,7 +6,7 @@ from torchvision.ops import nms
 from .box_utils import decode, decode_landm
 
 
-def draw(image, dets, threshold, fps=None):
+def draw_keypoint(image, dets, threshold):
     for b in dets:
         if b[4] < threshold:
             continue
@@ -19,13 +19,6 @@ def draw(image, dets, threshold, fps=None):
             image, text, (cx, cy),
             cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255)
         )
-
-        if isinstance(fps, float):
-            text = f"{1.0 / fps:.1f} fps"
-            cv2.putText(
-                image, text, (5, 15),
-                cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255)
-            )
 
         # landms
         cv2.circle(image, (b[5], b[6]), 1, (0, 0, 255), 4)

@@ -9,10 +9,9 @@ import torch.backends.cudnn as cudnn
 
 from face_detection.model.prior_box import PriorBox
 from face_detection.model.retinaface import RetinaFace
-from face_detection.utils.misc import draw, inference
-from face_detection.utils.timer import Timer
+from face_detection.utils.misc import draw_keypoint, inference
 
-parser = argparse.ArgumentParser(description='Retinaface')
+parser = argparse.ArgumentParser(description='PIMNet')
 parser.add_argument(
     '--checkpoint', type=str,
     default='face_detection/weights/mobilenet0.25_final.pt',
@@ -87,7 +86,6 @@ def main():
         dummy = img_tmp.to(device)
         detector = torch.jit.trace(detector, example_inputs=dummy)
 
-    timer = Timer()
     if args.save_image:
         nframe = 0
         fname = os.path.join(args.save_dir, "{:06d}.jpg")
@@ -96,24 +94,28 @@ def main():
     # testing begin
     ret_val, img_raw = cap.read()
     while ret_val:
+        start = cv2.getTickCount()
+
         # NOTE preprocessing.
-        timer.tic()
         dets = inference(
             detector, img_raw, scale, scale1, prior_data, cfg,
             args.confidence_threshold, args.nms_threshold, device
         )
-        timer.toc()
 
-        print(f"runtime: {timer.average_time:.4f} sec/iter")
+        fps = float(cv2.getTickFrequency() / (cv2.getTickCount() - start))
+        cv2.putText(
+            img_raw, f"FPS: {fps:.1f}", (5, 15),
+            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255)
+        )
 
         # show image
-        draw(img_raw, dets, args.vis_thres, timer.diff)
+        draw_keypoint(img_raw, dets, args.vis_thres)
 
         if args.save_image:
             cv2.imwrite(fname.format(nframe), img_raw)
             nframe += 1
 
-        cv2.imshow("Face Detection Demo", img_raw)
+        cv2.imshow("Webcam Demo", img_raw)
         if cv2.waitKey(1) == 27:  # Press ESC button to quit.
             break
 

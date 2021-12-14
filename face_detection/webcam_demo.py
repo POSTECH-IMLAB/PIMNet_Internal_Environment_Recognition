@@ -9,8 +9,7 @@ import torch.backends.cudnn as cudnn
 
 from model.prior_box import PriorBox
 from model.retinaface import RetinaFace
-from utils.misc import draw, inference
-from utils.timer import Timer
+from utils.misc import draw_keypoint, inference
 
 parser = argparse.ArgumentParser(description='Retinaface')
 parser.add_argument(
@@ -87,7 +86,6 @@ def main():
         dummy = img_tmp.to(device)
         net = torch.jit.trace(net, example_inputs=dummy)
 
-    timer = Timer()
     if args.save_image:
         nframe = 0
         fname = os.path.join(args.save_dir, "{:06d}.jpg")
@@ -96,18 +94,23 @@ def main():
     # testing begin
     ret_val, img_raw = cap.read()
     while ret_val:
+        start = cv2.getTickCount()
+
         # NOTE preprocessing.
-        timer.tic()
         dets = inference(
             net, img_raw, scale, scale1, prior_data, cfg,
             args.confidence_threshold, args.nms_threshold, device
         )
-        timer.toc()
 
-        print(f"runtime: {timer.average_time:.4f} sec/iter")
+        fps = float(cv2.getTickFrequency() / (cv2.getTickCount() - start))
+        print(f"runtime: {fps:.1f} sec/iter")
+        cv2.putText(
+            img_raw, f"FPS: {fps:.1f}", (5, 15),
+            cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255)
+        )
 
         # show image
-        draw(img_raw, dets, args.vis_thres, timer.diff)
+        draw_keypoint(img_raw, dets, args.vis_thres)
 
         if args.save_image:
             cv2.imwrite(fname.format(nframe), img_raw)

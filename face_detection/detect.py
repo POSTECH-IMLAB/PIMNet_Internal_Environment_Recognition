@@ -11,7 +11,7 @@ from torchvision.ops import nms
 from model.prior_box import PriorBox
 from model.retinaface import RetinaFace
 from utils.box_utils import decode, decode_landm
-from utils.misc import draw
+from utils.misc import draw_keypoint
 
 parser = argparse.ArgumentParser(description='Retinaface')
 parser.add_argument(
@@ -127,7 +127,7 @@ def main():
 
         # save image
         if args.save_image:
-            draw(img_raw, dets, args.vis_thres)
+            draw_keypoint(img_raw, dets, args.vis_thres)
 
             # save image
             name = "test.jpg"
