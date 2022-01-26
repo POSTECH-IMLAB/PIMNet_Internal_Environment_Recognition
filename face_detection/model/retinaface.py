@@ -1,7 +1,10 @@
+import time
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision.models.feature_extraction import create_feature_extractor
+from torchvision.models import quantization
 from torchvision.ops import FeaturePyramidNetwork
 
 from .networks import SSH, MobileNetV1
@@ -45,9 +48,8 @@ class RetinaFace(nn.Module):
         if backbone == "mobilenet0.25":
             model = MobileNetV1()
             try:
-                checkpoint = torch.load(
-                    "./weights/mobilenet0.25_pretrain.tar", map_location="cpu"
-                )
+                ckpt_file = "./weights/mobilenet0.25_pretrain.pt"
+                checkpoint = torch.load(ckpt_file, map_location="cpu")
                 from collections import OrderedDict
                 new_state_dict = OrderedDict()
                 for k, v in checkpoint['state_dict'].items():
@@ -108,35 +110,60 @@ class RetinaFace(nn.Module):
         return landmarkhead
 
     def forward(self, inputs):
+        # start_time = time.perf_counter()
         out = self.body(inputs)
+        # duration = time.perf_counter() - start_time
+        # print(f"CNN: {duration * 1000.0:.3f} ms")
 
         # FPN
+        # start_time = time.perf_counter()
         out = self.fpn(out)
+        # duration = time.perf_counter() - start_time
+        # print(f"FPN: {duration * 1000.0:.3f} ms")
 
         # SSH
+        # start_time = time.perf_counter()
         feature0 = self.ssh1(out["feat0"])
         feature1 = self.ssh2(out["feat1"])
         feature2 = self.ssh3(out["feat2"])
+        # duration = time.perf_counter() - start_time
+        # print(f"SSH: {duration * 1000.0:.3f} ms")
 
         # features = [feature1, feature2, feature3]
+        # start_time = time.perf_counter()
         bbox_regressions = torch.cat([
             self.bbox_head[0](feature0),
             self.bbox_head[1](feature1),
             self.bbox_head[2](feature2),
         ], dim=1)
+        # duration = time.perf_counter() - start_time
+        # print(f"BBOX regression: {duration * 1000.0:.3f} ms")
 
+        # start_time = time.perf_counter()
         classifications = torch.cat([
             self.class_head[0](feature0),
             self.class_head[1](feature1),
             self.class_head[2](feature2),
         ], dim=1)
+        # duration = time.perf_counter() - start_time
+        # print(f"Classification: {duration * 1000.0:.3f} ms")
 
+        # start_time = time.perf_counter()
         lm_regressions = torch.cat([
             self.landmark_head[0](feature0),
             self.landmark_head[1](feature1),
             self.landmark_head[2](feature2),
         ], dim=1)
+        # duration = time.perf_counter() - start_time
+        # print(f"Landmark regression: {duration * 1000.0:.3f} ms")
 
         if not self.training:
             classifications = F.softmax(classifications, dim=-1)
         return bbox_regressions, classifications, lm_regressions
+
+    def fuse_model(self) -> None:
+        for m in self.modules():
+            if type(m) == quantization.mobilenetv2.QuantizableMobileNetV2:
+                m.fuse_model()
+            elif type(m) == quantization.mobilenetv3.QuantizableMobileNetV3:
+                m.fuse_model()

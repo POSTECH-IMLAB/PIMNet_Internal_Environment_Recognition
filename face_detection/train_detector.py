@@ -6,8 +6,6 @@ import os
 import time
 
 import torch
-import torch.optim as optim
-from torch.utils.data import DataLoader
 
 from data import WiderFaceDetection, cfg_mnet, cfg_re50, preproc
 from model.multibox_loss import MultiBoxLoss
@@ -35,7 +33,7 @@ if args.network == "mobilenet0.25":
 elif args.network == "resnet50":
     cfg = cfg_re50
 
-rgb_mean = (104, 117, 123) # bgr order
+RGB_MEAN = (104, 117, 123) # bgr order
 img_dim = cfg['image_size']
 batch_size = cfg['batch_size']
 max_epoch = cfg['epoch']
@@ -46,10 +44,11 @@ training_dataset = args.dataset
 save_folder = args.save_folder
 
 
-def initialize_network(cfg, checkpoint=None):
+def initialize_network(cfg, checkpoint=None, print_net=False):
     net = RetinaFace(**cfg)
-    print("Printing net...")
-    print(net)
+    if print_net:
+        print("Printing net...")
+        print(net)
     if checkpoint is not None:
         print('Loading resume network...')
         net.load_state_dict(checkpoint["net_state_dict"])
@@ -64,8 +63,8 @@ def initialize_network(cfg, checkpoint=None):
 
 def training_loop(net, optimizer, criterion, dataloader, cfg):
     assert isinstance(net, torch.nn.Module)
-    assert isinstance(optimizer, optim.Optimizer)
-    assert isinstance(dataloader, DataLoader)
+    assert isinstance(optimizer, torch.optim.Optimizer)
+    assert isinstance(dataloader, torch.utils.data.DataLoader)
     assert isinstance(cfg, dict)
 
     priorbox = PriorBox(cfg, image_size=(cfg['image_size'],)*2)
@@ -175,14 +174,14 @@ def main():
     cfg, net = initialize_network(cfg, checkpoint)
     torch.backends.cudnn.benchmark = True
 
-    optimizer = optim.SGD(
+    optimizer = torch.optim.SGD(
         net.parameters(), lr=initial_lr,
         momentum=args.momentum, weight_decay=args.weight_decay,
     )
     criterion = MultiBoxLoss(2, 0.35, True, 0, True, 7, 0.35, False)
     
-    dataset = WiderFaceDetection(training_dataset, preproc(img_dim, rgb_mean))
-    dataloader = DataLoader(
+    dataset = WiderFaceDetection(training_dataset, preproc(img_dim, RGB_MEAN))
+    dataloader = torch.utils.data.DataLoader(
         dataset, batch_size, shuffle=True,
         num_workers=args.num_workers, collate_fn=dataset.collate,
     )
