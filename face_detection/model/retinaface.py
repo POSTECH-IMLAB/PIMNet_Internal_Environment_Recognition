@@ -47,8 +47,8 @@ class RetinaFace(nn.Module):
         assert backbone in ("mobilenet0.25", "resnet50")
         if backbone == "mobilenet0.25":
             model = MobileNetV1()
+            ckpt_file = "./weights/mobilenet0.25_pretrain.pt"
             try:
-                ckpt_file = "./weights/mobilenet0.25_pretrain.pt"
                 checkpoint = torch.load(ckpt_file, map_location="cpu")
                 from collections import OrderedDict
                 new_state_dict = OrderedDict()
@@ -58,7 +58,7 @@ class RetinaFace(nn.Module):
                 # load params
                 model.load_state_dict(new_state_dict)
             except:
-                pass
+                print(f"{ckpt_file} not found!")
             return_nodes={
                 "stage1": "feat0",
                 "stage2": "feat1",
