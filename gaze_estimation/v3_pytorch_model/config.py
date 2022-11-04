@@ -1,8 +1,9 @@
 class Config(object):
     lr = 0.001
 
-    # 'LIGHT' or 'HEAVY' or 'HEAVY+ATT'
-    use_model_type = 'HEAVY+ATT'
+    # 'LIGHT' or 'HEAVY' or 'HEAVY+ATT' or 'MORE_LIGHT'
+    #use_model_type = 'HEAVY+ATT'
+    use_model_type = 'MORE_LIGHT'
 
     alpha = 2
     batch_size = 200
@@ -13,8 +14,8 @@ class Config(object):
     print_iter = 5
     save_epoch = 10
 
-    data_path = 'D:/MOBIS/cropped_fld_and_face'
-    save_path = 'save_checks_heavy_att'
+    data_path = 'D:/-----/cropped_fld_and_face'
+    save_path = 'save_checks_more_light'
 
     max_epoch = 200
     gpus = "0"
