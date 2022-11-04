@@ -18,7 +18,7 @@ class Estimator(nn.Module):
 
         
 
-    def forward(self, input_x, input_local_x, flds=None):
+    def forward(self, input_x, flds=None):
         
         output = self.global_estimator(input_x)
         #l_fea = self.local_estimator(input_local_x)
@@ -50,29 +50,29 @@ class Global_Estimator(nn.Module):
         
 
         # 120 x 180
-        self.conv1 = conv2d_block(input_dim, 40, 7, 2, 0)
+        self.conv1 = conv2d_block(input_dim, 20, 7, 2, 0)
         #self.conv1_att = dis_conv(40, 1, 3, 1, 1)
-        self.norm_1 = nn.InstanceNorm2d(40)
+        self.norm_1 = nn.InstanceNorm2d(20)
 
         # 60 x 90
-        self.conv2 = conv2d_block(40, 70, 5, 2, 1)
+        self.conv2 = conv2d_block(20, 32, 5, 2, 1)
         #self.conv2_att = dis_conv(70, 1, 3, 1, 1)
-        self.norm_2 = nn.InstanceNorm2d(70)
+        self.norm_2 = nn.InstanceNorm2d(32)
 
         # 30 x 45
-        self.conv3 = conv2d_block(70, 60, 3, 1, 0)
+        self.conv3 = conv2d_block(32, 30, 3, 1, 0)
         #self.conv3_att = dis_conv(60, 1, 3, 1, 1)
-        self.norm_3 = nn.InstanceNorm2d(60)
+        self.norm_3 = nn.InstanceNorm2d(30)
         
-        self.conv4 = conv2d_block(60, 80, 3, 1, 0)
+        self.conv4 = conv2d_block(30, 20, 3, 1, 0)
         #self.conv4_att = dis_conv(80, 1, 3, 1, 1)
-        self.norm_4 = nn.InstanceNorm2d(80)
+        self.norm_4 = nn.InstanceNorm2d(20)
 
-        self.conv5 = conv2d_block(80, 100, 3, 1, 0)
-        self.norm_5 = nn.InstanceNorm2d(100)
+        self.conv5 = conv2d_block(20, 50, 3, 1, 0)
+        self.norm_5 = nn.InstanceNorm2d(50)
 
-        self.fc1 = nn.Linear((80 * 7 * 6) + (100 * 7 * 6), 4000)
-        self.fc2 = nn.Linear(4000, 6)
+        self.fc1 = nn.Linear((20 * 7 * 6) + (50 * 7 * 6), 2000)
+        self.fc2 = nn.Linear(2000, 6)
     
 
     def forward(self, x):
@@ -125,61 +125,6 @@ class Global_Estimator(nn.Module):
 
 
 
-
-# ------------------------------------- LOCAL ---------------------
-class Local_Estimator(nn.Module):
-    def __init__(self):
-        super(Local_Estimator, self).__init__()
-
-        input_dim = 1
-        cnum = 16
-
-        self.pool = nn.MaxPool2d(2)
-
-        self.conv1 = conv2d_block(input_dim, 40, 5, 2, 2)
-        self.conv1_att = conv2d_block(40, 1, 3, 1, 1)
-
-        self.conv2 = conv2d_block(40, 70, 5, 2, 2)
-        self.conv2_att = conv2d_block(70, 1, 3, 1, 1)
-
-        self.conv3 = conv2d_block(70, 60, 3, 2, 2)
-        self.conv3_att = conv2d_block(60, 1, 3, 1, 1)
-        
-        self.fc1 = nn.Linear(60 * 11 * 16, 1024)
-        #self.fc2 = nn.Linear(512, 1)
-    
-
-    def forward(self, x):
-        x = self.conv1(x)
-        x_att = self.conv1_att(x)
-        x = x_att * x
-        #x = self.pool(x)
-        #print("B 11 -" + str(x.size()))
-
-        x = self.conv2(x)
-        x_att = self.conv2_att(x)
-        x = x_att * x
-        #x = self.pool(x)
-        #print("B 22 -" + str(x.size()))
-
-        x = self.conv3(x)
-        x_att = self.conv3_att(x)
-        x = x_att * x
-        #x = self.pool(x)
-        #print("B 33-" + str(x.size()))
-
-        x = x.view(x.size()[0], -1)
-
-        x = self.fc1(x)
-        #x = self.fc2(x)
-
-        return x
-
-
-
-
-
-        
 
 
 
