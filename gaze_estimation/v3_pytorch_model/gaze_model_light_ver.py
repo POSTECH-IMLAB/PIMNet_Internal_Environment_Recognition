@@ -8,7 +8,6 @@ class Estimator(nn.Module):
         super(Estimator, self).__init__()
 
         self.global_estimator = Global_Estimator()
-        #self.local_estimator = Local_Estimator()
         self.use_mtcnn = use_mtcnn
         
 
