@@ -14,9 +14,6 @@ class Estimator(nn.Module):
     def forward(self, input_x, flds=None):
         
         output = self.global_estimator(input_x)
-        #l_fea = self.local_estimator(input_local_x)
-
-
         return output
 
 
