@@ -11,12 +11,6 @@ class Estimator(nn.Module):
         #self.local_estimator = Local_Estimator()
         self.use_mtcnn = use_mtcnn
         
-        #if use_mtcnn:
-        #    self.final_fc = nn.Linear(1024 + 512 + 136, 6)
-        #else:
-        #    self.final_fc = nn.Linear(4000, 6)
-
-        
 
     def forward(self, input_x, flds=None):
         
