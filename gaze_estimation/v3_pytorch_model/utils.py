@@ -18,6 +18,7 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 
+# accuracy of gaze
 def accuracy(output, target, topk=(1,)):
     """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
@@ -33,3 +34,7 @@ def accuracy(output, target, topk=(1,)):
         correct_k = correct[:k].reshape(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
+
+
+def data_from_captue(img, use_fld=False):
+    img 
