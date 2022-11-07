@@ -228,7 +228,6 @@ class GPT(nn.Module):
         if actions is not None and self.model_type == 'reward_conditioned':
             rtg_embeddings = self.ret_emb(rtgs.type(torch.float32))
             action_embeddings = self.action_embeddings(actions) # (batch, block_size, n_embed)
-
             token_embeddings = torch.zeros((states.shape[0], states.shape[1]*3 - int(targets is None), self.config.n_embed), dtype=torch.float32, device=state_embeddings.device)
             token_embeddings[:,::3,:] = rtg_embeddings
             token_embeddings[:,1::3,:] = state_embeddings
@@ -255,6 +254,7 @@ class GPT(nn.Module):
 
         ############################################################################################################
         # timesteps = torch.cat([timesteps, timesteps[:, -1, :].unsqueeze(-1)+1], 1)
+        # Is timestep correct?
         ############################################################################################################
 #         position_embeddings = torch.gather(all_global_pos_emb, 1, torch.repeat_interleave(timesteps, self.config.n_embed, dim=-1)) + self.pos_emb[:, :token_embeddings.shape[1], :]
         # x = self.drop(token_embeddings + position_embeddings)
