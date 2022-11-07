@@ -36,7 +36,6 @@ class Global_Estimator(nn.Module):
 
         # 120 x 180
         self.conv1 = conv2d_block(input_dim, 20, 7, 2, 0)
-        #self.conv1_att = dis_conv(40, 1, 3, 1, 1)
         self.norm_1 = nn.InstanceNorm2d(20)
 
         # 60 x 90
