@@ -67,7 +67,6 @@ class Global_Estimator(nn.Module):
         x = self.norm_1(x)
         #print("A 10 -" + str(x.size()))
         x = self.pool3(x)
-        #print("A 11 -" + str(x.size()))
 
         x = F.pad(x, (25, 25, 30, 30)) # [left, right, top, bot]
         x = self.lrelu(self.conv2(x))
