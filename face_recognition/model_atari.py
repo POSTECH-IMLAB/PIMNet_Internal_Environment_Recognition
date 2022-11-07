@@ -256,7 +256,7 @@ class GPT(nn.Module):
         ############################################################################################################
         # timesteps = torch.cat([timesteps, timesteps[:, -1, :].unsqueeze(-1)+1], 1)
         ############################################################################################################
-        position_embeddings = torch.gather(all_global_pos_emb, 1, torch.repeat_interleave(timesteps, self.config.n_embed, dim=-1)) + self.pos_emb[:, :token_embeddings.shape[1], :]
+#         position_embeddings = torch.gather(all_global_pos_emb, 1, torch.repeat_interleave(timesteps, self.config.n_embed, dim=-1)) + self.pos_emb[:, :token_embeddings.shape[1], :]
         # x = self.drop(token_embeddings + position_embeddings)
         
         x = self.drop(token_embeddings + position_embeddings.repeat(1, token_embeddings.size(1)//position_embeddings.size(1), 1))
