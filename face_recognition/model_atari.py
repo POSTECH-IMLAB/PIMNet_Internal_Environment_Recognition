@@ -1,5 +1,6 @@
 
 """
+taken from: https://github.com/karpathy/minGPT/
 GPT model:
 - the initial stem consists of a combination of token encoding and a positional encoding
 - the meat of it is a uniform sequence of Transformer blocks
