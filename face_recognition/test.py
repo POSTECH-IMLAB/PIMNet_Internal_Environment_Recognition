@@ -110,7 +110,7 @@ if __name__ == '__main__':
         # single-GPU setting
         BACKBONE = BACKBONE.to(DEVICE)
 
-    cudnn.benchmark = True
+#     cudnn.benchmark = True
     
     #======= train & validation & save checkpoint =======#
     BACKBONE.eval()  # set to training mode
