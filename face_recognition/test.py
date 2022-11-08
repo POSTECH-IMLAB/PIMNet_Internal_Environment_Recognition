@@ -25,7 +25,6 @@ import random
 import torch.backends.cudnn as cudnn
 
 if __name__ == '__main__':
-
     #======= hyperparameters & data loaders =======#
     cfg = configurations[1]
 
@@ -110,7 +109,7 @@ if __name__ == '__main__':
         # single-GPU setting
         BACKBONE = BACKBONE.to(DEVICE)
 
-    cudnn.benchmark = True
+#     cudnn.benchmark = True
     
     #======= train & validation & save checkpoint =======#
     BACKBONE.eval()  # set to training mode
@@ -144,7 +143,7 @@ if __name__ == '__main__':
                 Gallery_ID.append(img_path.rpartition('/')[-1].split('.')[0])
                 Gallery_feature=torch.cat([Gallery_feature, torch.div(features,torch.norm(features,2,1,True))],dim=0)
 
-    print('Gallery_ID:',Gallery_ID)
+    print('Gallery_ID:',Gallery_ID) # For the simple evaluation dataset
     for i, (data_path,img_path, txt_path) in enumerate(iter(dataset_prove)):
         print('Processing %d/%d'%(i+1,len(dataset_prove)))
         if int(img_path.rpartition('/')[-1].split('.')[0].rpartition('_')[2]) < 660:

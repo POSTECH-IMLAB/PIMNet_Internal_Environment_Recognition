@@ -17,7 +17,6 @@ import os
 
 
 if __name__ == '__main__':
-
     #======= hyperparameters & data loaders =======#
     cfg = configurations[1]
 
@@ -56,6 +55,7 @@ if __name__ == '__main__':
     print(cfg)
     print("=" * 60)
 
+    # Logging
     writer = SummaryWriter(LOG_ROOT) # writer for buffering intermedium results
 
     train_transform = transforms.Compose([ # refer to https://pytorch.org/docs/stable/torchvision/transforms.html for more build-in online data augmentation
