@@ -70,7 +70,6 @@ class Global_Estimator(nn.Module):
         self.norm_5 = nn.InstanceNorm2d(100)
 
         self.fc1 = nn.Linear((80 * 7 * 6) + (100 * 7 * 6), 4000)
-        #self.fc2 = nn.Linear(4000, 6)
     
 
     def forward(self, x):
