@@ -23,11 +23,6 @@ class Estimator(nn.Module):
         g_output = self.global_estimator(input_x)
         l_output = self.local_estimator(input_local_x)
 
-        #if self.use_mtcnn:
-        #    output = self.final_fc(torch.cat([g_fea, l_fea, flds], dim=1))
-        #else:
-        #    output = self.final_fc(torch.cat([g_fea, l_fea], dim=1))
-        #output = self.final_fc(g_fea)
         output = self.final_fc(torch.cat([g_output, l_output], dim=1))
 
         return output
