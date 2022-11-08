@@ -33,5 +33,5 @@ configurations = {
         #GPU_ID = [0], # specify your GPU ids
         PIN_MEMORY = True,
         NUM_WORKERS = 0,
-),
+)
 }
