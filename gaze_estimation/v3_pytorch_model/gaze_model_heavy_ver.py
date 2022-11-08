@@ -73,7 +73,6 @@ class Global_Estimator(nn.Module):
     
 
     def forward(self, x):
-        #print("ORIG -" + str(x.size()))
 
         # input : B x C x 120 x 100
         x = F.pad(x, (53, 53, 63, 63)) # [left, right, top, bot]
