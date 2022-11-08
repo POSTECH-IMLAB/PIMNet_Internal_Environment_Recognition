@@ -47,7 +47,6 @@ class Global_Estimator(nn.Module):
         self.norm_3 = nn.InstanceNorm2d(30)
         
         self.conv4 = conv2d_block(30, 20, 3, 1, 0)
-        #self.conv4_att = dis_conv(80, 1, 3, 1, 1)
         self.norm_4 = nn.InstanceNorm2d(20)
 
         self.conv5 = conv2d_block(20, 50, 3, 1, 0)
