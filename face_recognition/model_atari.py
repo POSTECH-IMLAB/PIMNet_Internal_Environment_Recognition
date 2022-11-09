@@ -15,10 +15,11 @@ import logging
 import torch
 import torch.nn as nn
 from torch.nn import functional as F
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
-import numpy as np
+
 
 class GELU(nn.Module):
     def forward(self, input):
