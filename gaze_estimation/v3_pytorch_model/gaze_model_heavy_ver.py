@@ -167,7 +167,6 @@ class Local_Estimator(nn.Module):
 
         # 30 x 45
         self.conv3 = conv2d_block(70, 60, 3, 1, 0)
-        #self.conv3_att = dis_conv(60, 1, 3, 1, 1)
         self.norm_3 = nn.InstanceNorm2d(60)
         
         self.conv4 = conv2d_block(60, 80, 3, 1, 0)
