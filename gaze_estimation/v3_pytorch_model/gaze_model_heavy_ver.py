@@ -214,7 +214,6 @@ class Local_Estimator(nn.Module):
             x = x_att4 * x
         x = self.norm_4(x)
         x = self.pool(x)
-        #print("41b" + str(x.size()))
         x_41 = x.view(x.size()[0], -1)
 
 
