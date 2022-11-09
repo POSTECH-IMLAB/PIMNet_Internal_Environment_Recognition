@@ -4,9 +4,9 @@ from align.align_trans import get_reference_facial_points, warp_and_crop_face
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
+import torch.optim as optim
 
 from config import configurations
 from backbone.model_resnet import ResNet_50, ResNet_101, ResNet_152
