@@ -228,7 +228,6 @@ class Local_Estimator(nn.Module):
         x_51 = x.view(x.size()[0], -1)
 
         #print("41" + str(x_41.size()))
-        #print("51" + str(x_51.size()))
 
         # concat 41 & 51
         x = self.fc1(torch.cat((x_41, x_51), dim=1))
