@@ -179,8 +179,6 @@ class Local_Estimator(nn.Module):
     
 
     def forward(self, x):
-        #print("ORIG -" + str(x.size()))
-
         # input : B x C x 50 x 100
         x = F.pad(x, (53, 53, 28, 28)) # [left, right, top, bot]
         x = self.lrelu(self.conv1(x))
