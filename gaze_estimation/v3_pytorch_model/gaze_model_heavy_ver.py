@@ -176,7 +176,6 @@ class Local_Estimator(nn.Module):
         self.norm_5 = nn.InstanceNorm2d(100)
 
         self.fc1 = nn.Linear((80 * 5 * 6) + (100 * 5 * 6), 1000)
-        #self.fc2 = nn.Linear(4000, 6)
     
 
     def forward(self, x):
